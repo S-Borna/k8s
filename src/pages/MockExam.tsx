@@ -3,11 +3,12 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
   CheckCircle2,
-  ChevronDown,
   GraduationCap,
   History,
   Sparkles,
 } from "lucide-react";
+import { Select } from "@/components/Select";
+import type { SelectOption } from "@/components/Select";
 import type { MockExamGrade, MockExamQuestion, MockExamRun } from "@/types";
 import { PageHeader } from "@/components/PageHeader";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -17,6 +18,17 @@ import { useAppState } from "@/hooks/useAppState";
 import { buildRun, pickQuestions, weakChapters } from "@/lib/mockExam";
 
 type Phase = "answering" | "reviewing" | "done";
+
+const chapterFilterOptions: SelectOption<string>[] = [
+  { value: "all", label: "Alla kapitel" },
+  ...chapters
+    .filter((c) => !c.skipped)
+    .map((c) => ({
+      value: String(c.id),
+      label: c.titleSv,
+      hint: `Kap ${String(c.id).padStart(2, "0")}`,
+    })),
+];
 
 export default function MockExam() {
   const { state, setState } = useAppState();
@@ -168,28 +180,13 @@ function StartScreen({
           <div className="text-[11px] uppercase tracking-[0.18em] text-text-faint">
             Kapitelfokus
           </div>
-          <div className="relative mt-2">
-            <select
+          <div className="mt-2">
+            <Select
+              ariaLabel="Kapitelfokus"
               value={String(filter)}
-              onChange={(e) =>
-                setFilter(
-                  e.target.value === "all" ? "all" : Number(e.target.value),
-                )
-              }
-              className="w-full appearance-none rounded-xl border border-border/60 bg-surface/30 py-2 pl-3 pr-8 text-sm text-text-muted hover:border-amber/40 hover:text-text focus:outline-none focus:ring-1 focus:ring-amber/40"
-            >
-              <option value="all">Alla kapitel</option>
-              {chapters
-                .filter((c) => !c.skipped)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    Kap {String(c.id).padStart(2, "0")} — {c.titleSv}
-                  </option>
-                ))}
-            </select>
-            <ChevronDown
-              size={14}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-faint"
+              onChange={(v) => setFilter(v === "all" ? "all" : Number(v))}
+              options={chapterFilterOptions}
+              triggerClassName="py-2 text-sm"
             />
           </div>
         </div>

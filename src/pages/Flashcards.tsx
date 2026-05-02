@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronDown } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
+import { Select } from "@/components/Select";
+import type { SelectOption } from "@/components/Select";
 import { staggerChild, staggerParent, spring } from "@/lib/motion";
 import { chapters } from "@/lib/contentLoader";
 import { useAppState } from "@/hooks/useAppState";
@@ -128,28 +129,23 @@ function ChapterPicker({
   value: ChapterFilter;
   onChange: (next: ChapterFilter) => void;
 }) {
+  const options: SelectOption<string>[] = [
+    { value: "all", label: "Alla kapitel" },
+    ...chapters
+      .filter((c) => !c.skipped)
+      .map((c) => ({
+        value: String(c.id),
+        label: c.titleSv,
+        hint: `Kap ${String(c.id).padStart(2, "0")}`,
+      })),
+  ];
   return (
-    <div className="relative">
-      <select
-        value={String(value)}
-        onChange={(e) =>
-          onChange(e.target.value === "all" ? "all" : Number(e.target.value))
-        }
-        className="appearance-none rounded-xl border border-border/60 bg-surface/30 py-1.5 pl-3 pr-8 text-xs text-text-muted transition hover:border-amber/40 hover:text-text focus:outline-none focus:ring-1 focus:ring-amber/40"
-      >
-        <option value="all">Alla kapitel</option>
-        {chapters
-          .filter((c) => !c.skipped)
-          .map((c) => (
-            <option key={c.id} value={c.id}>
-              Kap {String(c.id).padStart(2, "0")} — {c.titleSv}
-            </option>
-          ))}
-      </select>
-      <ChevronDown
-        size={12}
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-text-faint"
-      />
-    </div>
+    <Select
+      ariaLabel="Kapitelfilter"
+      value={String(value)}
+      onChange={(v) => onChange(v === "all" ? "all" : Number(v))}
+      options={options}
+      className="w-56"
+    />
   );
 }
