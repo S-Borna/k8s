@@ -39,10 +39,11 @@ export default function Dashboard() {
         eyebrow={greeting}
         title={
           <>
-            Pluggsessioner som <em className="not-italic text-amber">fastnar</em>.
+            Kubernetes med{" "}
+            <em className="italian-flag font-display italic">Giacomo</em>.
           </>
         }
-        description="Läs · öva · testa. Repetera tills det sitter. Innehåll, flashcards och hands-on samlat på ett ställe — utan distraktioner."
+        description="Läs · öva · testa. Repetera tills det sitter. Innehåll, flashcards och AI-tenta samlat på ett ställe — utan distraktioner."
       />
 
       <motion.div

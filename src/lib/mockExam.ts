@@ -1,18 +1,34 @@
-import type { MockExamGrade, MockExamQuestion, MockExamRun } from "@/types";
+import type {
+  MockExamDifficulty,
+  MockExamGrade,
+  MockExamQuestion,
+  MockExamRun,
+} from "@/types";
 
 export function pickQuestions(
   pool: MockExamQuestion[],
   count: number,
   chapterFilter: number | null = null,
+  difficultyFilter: MockExamDifficulty | null = null,
 ): MockExamQuestion[] {
-  const filtered =
-    chapterFilter === null
-      ? pool
-      : pool.filter(
-          (q) => q.chapterId === chapterFilter || q.chapterId === null,
-        );
+  let filtered = pool;
+  if (chapterFilter !== null) {
+    filtered = filtered.filter(
+      (q) => q.chapterId === chapterFilter || q.chapterId === null,
+    );
+  }
+  if (difficultyFilter !== null) {
+    filtered = filtered.filter((q) => q.difficulty === difficultyFilter);
+  }
   const shuffled = [...filtered].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
+export function difficultyCount(
+  pool: MockExamQuestion[],
+  difficulty: MockExamDifficulty,
+): number {
+  return pool.filter((q) => q.difficulty === difficulty).length;
 }
 
 export function scoreFromGrades(

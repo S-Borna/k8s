@@ -9,13 +9,23 @@ import {
 } from "lucide-react";
 import { Select } from "@/components/Select";
 import type { SelectOption } from "@/components/Select";
-import type { MockExamGrade, MockExamQuestion, MockExamRun } from "@/types";
+import type {
+  MockExamDifficulty,
+  MockExamGrade,
+  MockExamQuestion,
+  MockExamRun,
+} from "@/types";
 import { PageHeader } from "@/components/PageHeader";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { staggerChild, staggerParent, spring } from "@/lib/motion";
 import { chapters, mockExamQuestions } from "@/lib/contentLoader";
 import { useAppState } from "@/hooks/useAppState";
-import { buildRun, pickQuestions, weakChapters } from "@/lib/mockExam";
+import {
+  buildRun,
+  difficultyCount,
+  pickQuestions,
+  weakChapters,
+} from "@/lib/mockExam";
 
 type Phase = "answering" | "reviewing" | "done";
 
@@ -38,8 +48,17 @@ export default function MockExam() {
   const [grades, setGrades] = useState<Record<string, MockExamGrade>>({});
   const [phase, setPhase] = useState<Phase>("answering");
 
-  function start(count: number, chapterFilter: number | null) {
-    const qs = pickQuestions(mockExamQuestions, count, chapterFilter);
+  function start(
+    count: number,
+    chapterFilter: number | null,
+    difficultyFilter: MockExamDifficulty | null,
+  ) {
+    const qs = pickQuestions(
+      mockExamQuestions,
+      count,
+      chapterFilter,
+      difficultyFilter,
+    );
     setActive(qs);
     setIndex(0);
     setAnswers({});
@@ -82,8 +101,8 @@ export default function MockExam() {
     return (
       <motion.div variants={staggerParent} initial="initial" animate="enter">
         <PageHeader
-          eyebrow="Skriftliga svar"
-          title="Mock-tenta"
+          eyebrow="Skriftliga svar · AI-tolkat från boken"
+          title="AI Tenta"
           description="Slumpade frågor i Giacomos stil — fokus på att förklara varför, inte bara vad. Skriv svar fritt, jämför med facit, betygsätt själv."
         />
         <StartScreen onStart={start} />
@@ -102,7 +121,7 @@ export default function MockExam() {
       <DoneScreen
         run={run}
         weak={weak}
-        onAgain={() => start(active.length, null)}
+        onAgain={() => start(active.length, null, null)}
         onQuit={quit}
       />
     );
@@ -145,10 +164,28 @@ export default function MockExam() {
 function StartScreen({
   onStart,
 }: {
-  onStart: (count: number, chapterFilter: number | null) => void;
+  onStart: (
+    count: number,
+    chapterFilter: number | null,
+    difficultyFilter: MockExamDifficulty | null,
+  ) => void;
 }) {
   const [count, setCount] = useState(10);
   const [filter, setFilter] = useState<"all" | number>("all");
+  const [difficulty, setDifficulty] = useState<"all" | MockExamDifficulty>("all");
+
+  const difficultyOptions: { value: "all" | MockExamDifficulty; label: string; count: number }[] = [
+    { value: "all", label: "Alla", count: mockExamQuestions.length },
+    { value: "easy", label: "Lätt", count: difficultyCount(mockExamQuestions, "easy") },
+    { value: "medium", label: "Medel", count: difficultyCount(mockExamQuestions, "medium") },
+    { value: "hard", label: "Svår", count: difficultyCount(mockExamQuestions, "hard") },
+  ];
+
+  const matching =
+    difficulty === "all"
+      ? mockExamQuestions.length
+      : difficultyCount(mockExamQuestions, difficulty);
+  const tooFew = matching < count;
 
   return (
     <motion.div variants={staggerChild} className="glass mb-10 rounded-3xl p-6 md:p-8">
@@ -192,18 +229,75 @@ function StartScreen({
         </div>
       </div>
 
+      <div className="mt-6">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-text-faint">
+          Svårighet
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5 rounded-xl border border-border/60 bg-surface/30 p-0.5">
+          {difficultyOptions.map((opt) => (
+            <motion.button
+              key={opt.value}
+              whileTap={{ scale: 0.97 }}
+              transition={spring}
+              onClick={() => setDifficulty(opt.value)}
+              className={`group flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                difficulty === opt.value
+                  ? `bg-amber/15 ${difficultyTone(opt.value)}`
+                  : "text-text-muted hover:text-text"
+              }`}
+            >
+              {opt.value !== "all" && (
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    difficulty === opt.value
+                      ? difficultyTone(opt.value, "bg")
+                      : "bg-text-faint"
+                  }`}
+                />
+              )}
+              <span>{opt.label}</span>
+              <span className="text-xs text-text-faint">{opt.count}</span>
+            </motion.button>
+          ))}
+        </div>
+        {tooFew && (
+          <p className="mt-2 text-xs text-rose">
+            Bara {matching} frågor matchar — sessionen blir kortare.
+          </p>
+        )}
+      </div>
+
       <motion.button
-        onClick={() => onStart(count, filter === "all" ? null : filter)}
+        onClick={() =>
+          onStart(
+            count,
+            filter === "all" ? null : filter,
+            difficulty === "all" ? null : difficulty,
+          )
+        }
         whileTap={{ scale: 0.98 }}
         whileHover={{ y: -1 }}
         transition={spring}
         className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber px-5 py-3 text-sm font-medium text-bg transition hover:bg-amber-soft md:w-auto"
       >
         <GraduationCap size={16} />
-        Starta mock-tenta
+        Starta tenta
       </motion.button>
     </motion.div>
   );
+}
+
+function difficultyTone(
+  d: "all" | MockExamDifficulty,
+  type: "text" | "bg" = "text",
+): string {
+  const map = {
+    easy: type === "bg" ? "bg-sage" : "text-sage",
+    medium: type === "bg" ? "bg-amber" : "text-amber",
+    hard: type === "bg" ? "bg-rose" : "text-rose",
+    all: type === "bg" ? "bg-amber" : "text-amber",
+  };
+  return map[d];
 }
 
 function SessionHeader({
