@@ -7,48 +7,87 @@ estimatedMinutes: 10
 
 # Sammanfattning
 
-<!--
-Skriv kapitelsammanfattning här. Max ~600 ord.
-- Korta stycken
-- `inline-code` för kommandon/typer
-- ## H2 för underrubriker
-- Kodblock med ```bash eller ```yaml
--->
+Kapitel 0 sätter scenen för boken. Kubernetes (K8s) är en **orkestrator** för containeriserade applikationer — den startar, stoppar, skalar, helar och uppdaterar containers över ett kluster av maskiner.
+
+## Vad K8s är
+
+K8s tar bort det manuella arbetet med att hålla applikationer igång. Du beskriver vad du vill ha (10 kopior av en webbserver), och K8s ser till att det är så — även om noder kraschar, containers dör, eller trafik ökar plötsligt.
+
+## Var K8s körs
+
+K8s körs på alla större molnplattformar (AWS, Azure, GCP) och on-premises. Du kan köra det lokalt på din laptop med verktyg som `kind`, `minikube` eller Docker Desktop.
+
+## Vad boken täcker
+
+Boken bygger upp förståelse i lager:
+1. Grunderna (vad K8s är, hur arkitekturen ser ut)
+2. Kärnobjekt (Pods, Deployments, Services, Ingress)
+3. Service discovery och nätverk
+4. Storage och konfiguration
+5. Säkerhet och RBAC
+
+Varje kapitel har hands-on så du faktiskt kör kommandon — inte bara läser om dem.
 
 # Giacomos tillägg
 
-<!--
-Vad Giacomo lyfte på lektionen som inte står i boken.
-Markera tentarelevanta tips med:
-> 💡 Tentarelevant: ...
--->
+Giacomo betonar att boken är en **bra start men inte räcker** för en DevOps-roll. Boken lär dig ytan; produktionserfarenhet kräver att du själv driftar kluster, hanterar incidenter, och förstår nätverket på djupet.
 
-# Flashcards
+> 💡 Tentarelevant: Förstå skillnaden mellan att **använda** K8s (köra kubectl-kommandon) och att **drifta** K8s (hantera control plane, etcd, certifikat). Tentan testar konceptuell förståelse, inte enbart kommandon.
 
-<!--
-8-15 kort per kapitel. Format STRIKT:
+# Lektion
 
-## Q: Frågan här?
-
-**A:** Svaret här. Förklara VARFÖR, inte bara VAD. Tentan är skriftlig.
-
-## Q: Nästa fråga?
-
-**A:** Nästa svar.
--->
+<!-- Fylls i efter lektionen - Giacomos genomgång, Q&A, demos -->
 
 # Hands-on
 
-<!--
-4-8 steg. Format:
+## 1. Verifiera att Docker Desktop körs
 
-## 1. Stegtitel
-
-Kort beskrivning av vad steget gör och varför.
+Boken förutsätter att du har en lokal containerruntime. Docker Desktop är enklast på Mac.
 
 ```bash
-kubectl get pods
+docker version
 ```
 
-Förväntat: vad användaren ska se efter kommandot.
--->
+Förväntat: Client och Server visas båda med versioner. Server måste vara igång — om det säger "Cannot connect", starta Docker Desktop-appen.
+
+## 2. Verifiera kubectl
+
+`kubectl` är CLI-verktyget för att prata med K8s. Det installeras automatiskt med Docker Desktop.
+
+```bash
+kubectl version --client
+```
+
+Förväntat: Client version skrivs ut (t.ex. v1.34.x).
+
+## 3. Skapa ett lokalt kluster
+
+Boken använder `kind` (Kubernetes IN Docker) för lokala kluster. Docker Desktop's inbyggda K8s funkar också.
+
+```bash
+kind create cluster --name study --config kind-config.yaml
+```
+
+Förväntat: 1-2 minuter att starta. När klart: `kubectl get nodes` ska visa 1+ noder med status `Ready`.
+
+# Lektion hands-on
+
+<!-- Fylls i efter lektionen - egna övningar Giacomo gick igenom -->
+
+# Flashcards
+
+## Q: Vad är Kubernetes i en mening?
+
+**A:** Kubernetes är en orkestrator för containeriserade applikationer som automatiserar deployment, skalning, healing och uppdateringar över ett kluster av maskiner. Varför viktigt: det är abstraktionen som gör att du slipper hantera enskilda servrar manuellt.
+
+## Q: Vad menas med att K8s är "deklarativ"?
+
+**A:** Du beskriver önskat slutläge i YAML (10 Pods kör nginx) och K8s arbetar konstant för att verkligheten ska matcha beskrivningen. Motsatsen är imperativ - där du säger steg för steg vad som ska göras. Deklarativt vinner i K8s eftersom det möjliggör self-healing och rekonciliering.
+
+## Q: Varför körs K8s ovanpå containers istället för VMs?
+
+**A:** Containers startar på sekunder, har låg overhead, och paketerar app + runtime som en enhet. Detta gör skalning och uppdateringar drastiskt snabbare än VMs. K8s utnyttjar denna snabbhet - den kan ersätta en trasig container på sekunder utan att märkas av användarna.
+
+## Q: Vad gör en orkestrator?
+
+**A:** Schemalägger workloads till noder, övervakar hälsa, ersätter failade instances, balanserar trafik, hanterar konfiguration och hemligheter. Utan orkestrator skulle du behöva göra allt detta manuellt eller med custom scripts.
