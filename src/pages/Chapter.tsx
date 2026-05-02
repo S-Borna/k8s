@@ -6,10 +6,12 @@ import type { Chapter } from "@/types";
 import { getChapter } from "@/lib/contentLoader";
 import { useAppState } from "@/hooks/useAppState";
 import { staggerChild, staggerParent, spring } from "@/lib/motion";
-import { ChapterTabs, useActiveTab } from "@/components/ChapterTabs";
+import { ChapterTabs } from "@/components/ChapterTabs";
 import type { Tab } from "@/components/ChapterTabs";
+import { useActiveTab } from "@/hooks/useActiveTab";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { HandsOnList } from "@/components/HandsOnList";
+import { FlashcardDeck } from "@/components/FlashcardDeck";
 import { SANDBOX_LABEL, SANDBOX_URL } from "@/lib/sandbox";
 
 export default function ChapterPage() {
@@ -226,16 +228,19 @@ function TabContent({
     );
   }
 
-  // flashcards tab — Day 4 fyller i
+  // flashcards tab
   return (
     <motion.section
       variants={staggerChild}
       initial="initial"
       animate="enter"
       key="flashcards"
-      className="glass rounded-3xl p-10 text-center text-text-muted"
     >
-      Flashcards-tabben fylls Dag 4. {chapter.flashcards.length} kort väntar.
+      <FlashcardDeck
+        cards={chapter.flashcards}
+        emptyTitle="Inga flashcards för det här kapitlet ännu"
+        emptyDescription="Lägg till i content-source/ när Opus levererar fler kort."
+      />
     </motion.section>
   );
 }
