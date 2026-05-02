@@ -1,28 +1,61 @@
-import { motion, useReducedMotion, AnimatePresence } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
 import { Pause } from "lucide-react";
-import type { AnthemState } from "@/hooks/useAnthemState";
-import type { PrepAction } from "@/lib/anthemConfig";
+import { useAudioIntensity } from "@/hooks/useAudioIntensity";
 
-type Props = {
-  state: AnthemState;
-};
+const SING_START_SEC = 23.25;
 
-export function Gubbe({ state }: Props) {
-  const isPlaying = state.phase !== "idle";
+type Phase = "idle" | "preparing" | "singing";
+
+export function Gubbe() {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const intensity = useAudioIntensity(audio);
+
+  useEffect(() => {
+    setAudio(audioRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (!audio) return;
+    function compute() {
+      if (!audio || audio.paused) return setPhase("idle");
+      setPhase(audio.currentTime < SING_START_SEC ? "preparing" : "singing");
+    }
+    audio.addEventListener("play", compute);
+    audio.addEventListener("pause", compute);
+    audio.addEventListener("ended", compute);
+    audio.addEventListener("timeupdate", compute);
+    return () => {
+      audio.removeEventListener("play", compute);
+      audio.removeEventListener("pause", compute);
+      audio.removeEventListener("ended", compute);
+      audio.removeEventListener("timeupdate", compute);
+    };
+  }, [audio]);
+
+  function toggle() {
+    if (!audio) return;
+    if (audio.paused) void audio.play();
+    else audio.pause();
+  }
+
+  const isPlaying = phase !== "idle";
+
   return (
     <span className="relative -my-2 inline-block align-middle">
+      <audio ref={audioRef} src="/inno-bocelli.mp3" preload="auto" />
       <button
         type="button"
-        onClick={state.toggle}
+        onClick={toggle}
         aria-label={
-          state.phase === "idle"
-            ? "Klicka för att starta nationalsången"
-            : "Klicka för att pausa"
+          phase === "idle" ? "Starta nationalsången" : "Pausa nationalsången"
         }
-        className="group relative cursor-pointer rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-amber/50"
+        className="group relative cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-amber/50"
       >
-        <GubbeSvg state={state} />
+        <GubbeSvg phase={phase} intensity={intensity} />
         <AnimatePresence>
           {isPlaying && (
             <motion.span
@@ -45,8 +78,7 @@ export function Gubbe({ state }: Props) {
 const SOFT: Transition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] };
 const SPRING: Transition = { type: "spring", stiffness: 280, damping: 18 };
 
-function GubbeSvg({ state }: { state: AnthemState }) {
-  const { phase, prepAction, intensity } = state;
+function GubbeSvg({ phase, intensity }: { phase: Phase; intensity: number }) {
   const reduce = useReducedMotion() ?? false;
   const isSinging = phase === "singing";
   const isPreparing = phase === "preparing";
@@ -73,7 +105,7 @@ function GubbeSvg({ state }: { state: AnthemState }) {
         isSinging
           ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" }
           : isPreparing
-            ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
+            ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
             : SPRING
       }
     >
@@ -95,48 +127,97 @@ function GubbeSvg({ state }: { state: AnthemState }) {
       <FloatingNote show={isSinging} side="left" />
       <FloatingNote show={isSinging && intensity > 0.4} side="right" delay={0.6} />
 
-      {/* BODY (drawn first, behind head) */}
-      <Body
-        prepAction={prepAction}
-        isPreparing={isPreparing}
-        isSinging={isSinging}
-        intensity={intensity}
-        reduce={reduce}
-      />
+      {/* BODY */}
+      <motion.g
+        animate={
+          reduce
+            ? undefined
+            : isSinging
+              ? { scaleY: 1 + intensity * 0.04 }
+              : { scaleY: 1 }
+        }
+        transition={SOFT}
+        style={{ transformOrigin: "70px 130px" }}
+      >
+        {/* Tailcoat */}
+        <path
+          d="M 28 110 Q 32 120, 40 122 L 40 160 L 100 160 L 100 122 Q 108 120, 112 110 Q 110 105, 100 110 Q 90 116, 70 116 Q 50 116, 40 110 Q 30 105, 28 110 Z"
+          fill="url(#coat)"
+          stroke="hsl(0 0% 4%)"
+          strokeWidth="1"
+        />
+        {/* White waistcoat */}
+        <path
+          d="M 55 116 L 55 160 L 85 160 L 85 116 L 70 122 Z"
+          fill="hsl(40 25% 94%)"
+          stroke="hsl(35 15% 80%)"
+          strokeWidth="0.8"
+        />
+        {[124, 132, 140, 148].map((y) => (
+          <circle key={y} cx="70" cy={y} r="1.4" fill="hsl(38 60% 55%)" stroke="hsl(35 50% 40%)" strokeWidth="0.4" />
+        ))}
+        {/* Bow tie */}
+        <g>
+          <path d="M 56 117 L 64 113 L 64 121 Z" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.6" />
+          <path d="M 84 117 L 76 113 L 76 121 Z" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.6" />
+          <ellipse cx="70" cy="117" rx="3" ry="2.5" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.6" />
+        </g>
 
-      {/* Roving hand — appears for nose-swipe prep action */}
-      {isPreparing && prepAction === "nose" && !reduce && (
+        {/* Left arm */}
         <motion.g
-          initial={{ x: 60, y: 80, opacity: 0 }}
-          animate={{
-            x: [60, 0, -8, -10, -8, 8, 12, 60],
-            y: [80, 60, 65, 70, 78, 70, 65, 80],
-            opacity: [0, 1, 1, 1, 1, 1, 1, 0],
-          }}
-          transition={{ duration: 8.5, ease: "easeInOut", times: [0, 0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1] }}
+          animate={isSinging ? { rotate: [-30, -25, -32, -22, -30] } : { rotate: -8 }}
+          transition={
+            isSinging
+              ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" }
+              : SOFT
+          }
+          style={{ transformOrigin: "32px 118px" }}
         >
-          <ellipse cx="70" cy="70" rx="6" ry="5" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
-          {/* Index finger pointing up */}
-          <ellipse cx="70" cy="62" rx="1.5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.6" />
+          <path
+            d="M 32 116 Q 18 120, 8 130 Q 6 134, 12 138 Q 20 134, 26 132 L 32 124 Z"
+            fill="url(#coat)"
+            stroke="hsl(0 0% 4%)"
+            strokeWidth="0.8"
+          />
+          <rect x="6" y="132" width="10" height="4" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.4" />
+          <ellipse cx="6" cy="138" rx="5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
         </motion.g>
-      )}
 
-      {/* Roving hand — chest pat for belly action */}
-      {isPreparing && prepAction === "belly" && !reduce && (
+        {/* Right arm with handkerchief */}
         <motion.g
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: [0, 1, 1, 1, 1, 1, 0],
-            x: [0, -16, -16, -16, -16, -16, 0],
-            y: [0, 30, 28, 32, 28, 30, 0],
-          }}
-          transition={{ duration: 7, ease: "easeInOut", times: [0, 0.1, 0.3, 0.5, 0.7, 0.9, 1] }}
+          animate={isSinging ? { rotate: [30, 25, 32, 22, 30] } : { rotate: 8 }}
+          transition={
+            isSinging
+              ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" }
+              : SOFT
+          }
+          style={{ transformOrigin: "108px 118px" }}
         >
-          <ellipse cx="86" cy="100" rx="6" ry="5" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
+          <path
+            d="M 108 116 Q 122 120, 132 130 Q 134 134, 128 138 Q 120 134, 114 132 L 108 124 Z"
+            fill="url(#coat)"
+            stroke="hsl(0 0% 4%)"
+            strokeWidth="0.8"
+          />
+          <rect x="124" y="132" width="10" height="4" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.4" />
+          <ellipse cx="134" cy="138" rx="5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
+          <motion.g
+            animate={isSinging ? { rotate: [-3, 5, -3, 4, -3], y: [0, 1, 0] } : { rotate: 0, y: 0 }}
+            transition={
+              isSinging
+                ? { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
+                : SOFT
+            }
+            style={{ transformOrigin: "134px 142px" }}
+          >
+            <rect x="130" y="142" width="4" height="14" fill="hsl(140 70% 40%)" />
+            <rect x="134" y="142" width="4" height="14" fill="hsl(40 30% 95%)" />
+            <rect x="138" y="142" width="4" height="14" fill="hsl(5 78% 52%)" />
+          </motion.g>
         </motion.g>
-      )}
+      </motion.g>
 
-      {/* HEAD WRAPPER - dominant */}
+      {/* HEAD */}
       <motion.g
         animate={
           reduce
@@ -144,14 +225,14 @@ function GubbeSvg({ state }: { state: AnthemState }) {
             : isSinging
               ? { rotate: [0, -2, 0, 2, 0], scale: 1 + intensity * 0.03 }
               : isPreparing
-                ? prepHeadAnim(prepAction)
+                ? { rotate: [0, 1, 0, -1, 0] }
                 : { rotate: 0, scale: 1 }
         }
         transition={
           isSinging
             ? { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
             : isPreparing
-              ? prepHeadTransition(prepAction)
+              ? { duration: 3, repeat: Infinity, ease: "easeInOut" }
               : SPRING
         }
         style={{ transformOrigin: "70px 65px" }}
@@ -162,42 +243,25 @@ function GubbeSvg({ state }: { state: AnthemState }) {
           fill="hsl(0 0% 8%)"
         />
 
-        {/* Face - large dominant ellipse */}
-        <ellipse
-          cx="70"
-          cy="60"
-          rx="38"
-          ry="42"
-          fill="url(#skin)"
-          stroke="hsl(22 45% 48%)"
-          strokeWidth="1"
-        />
+        {/* Face */}
+        <ellipse cx="70" cy="60" rx="38" ry="42" fill="url(#skin)" stroke="hsl(22 45% 48%)" strokeWidth="1" />
 
-        {/* Hair top swept back */}
+        {/* Hair top */}
         <path
           d="M 40 35 Q 50 24, 70 22 Q 90 24, 100 35 Q 105 28, 95 22 Q 80 14, 70 14 Q 55 14, 45 22 Q 35 28, 40 35 Z"
           fill="hsl(0 0% 9%)"
         />
-
         {/* Sideburns */}
         <path d="M 35 50 Q 33 65, 40 78 Q 38 85, 36 75 Q 33 65, 35 50 Z" fill="hsl(0 0% 9%)" />
         <path d="M 105 50 Q 107 65, 100 78 Q 102 85, 104 75 Q 107 65, 105 50 Z" fill="hsl(0 0% 9%)" />
 
-        {/* Eyebrows - thick */}
+        {/* Eyebrows */}
         <motion.g
-          animate={
-            isSinging
-              ? { y: [-1, -3, -1, -3, -1] }
-              : isPreparing
-                ? prepBrowAnim(prepAction)
-                : { y: 0 }
-          }
+          animate={isSinging ? { y: [-1, -3, -1, -3, -1] } : { y: 0 }}
           transition={
             isSinging
               ? { duration: 0.45, repeat: Infinity, ease: "easeInOut" }
-              : isPreparing
-                ? { duration: 1.0, repeat: Infinity, ease: "easeInOut" }
-                : SPRING
+              : SPRING
           }
         >
           <path d="M 46 51 Q 53 47, 60 51 L 60 54 Q 53 50, 46 54 Z" fill="hsl(0 0% 8%)" />
@@ -209,7 +273,6 @@ function GubbeSvg({ state }: { state: AnthemState }) {
           <g>
             <path d="M 49 60 Q 53 56, 57 60" stroke="hsl(0 0% 8%)" strokeWidth="2" strokeLinecap="round" fill="none" />
             <path d="M 83 60 Q 87 56, 91 60" stroke="hsl(0 0% 8%)" strokeWidth="2" strokeLinecap="round" fill="none" />
-            {/* Tear of emotion */}
             {intensity > 0.5 && (
               <motion.path
                 d="M 50 64 Q 49 72, 51 78"
@@ -223,11 +286,6 @@ function GubbeSvg({ state }: { state: AnthemState }) {
               />
             )}
           </g>
-        ) : prepAction === "focus" && isPreparing ? (
-          <g>
-            <path d="M 49 60 Q 53 58, 57 60" stroke="hsl(0 0% 8%)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-            <path d="M 83 60 Q 87 58, 91 60" stroke="hsl(0 0% 8%)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-          </g>
         ) : (
           <g>
             <ellipse cx="53" cy="60" rx="2.3" ry="2.8" fill="hsl(0 0% 8%)" />
@@ -237,7 +295,7 @@ function GubbeSvg({ state }: { state: AnthemState }) {
           </g>
         )}
 
-        {/* Cheeks flushed when singing */}
+        {/* Cheeks flushed */}
         {isSinging && (
           <g>
             <ellipse cx="46" cy="74" rx="6" ry="5" fill="url(#cheek)" />
@@ -245,49 +303,31 @@ function GubbeSvg({ state }: { state: AnthemState }) {
           </g>
         )}
 
-        {/* Nose - prominent */}
-        <motion.path
+        {/* Nose */}
+        <path
           d="M 64 60 Q 60 70, 62 78 Q 65 82, 70 82 Q 75 82, 78 78 Q 80 70, 76 60 Q 70 58, 64 60 Z"
           fill="hsl(15 55% 70%)"
           stroke="hsl(8 60% 45%)"
           strokeWidth="0.9"
-          animate={
-            prepAction === "throat" && isPreparing
-              ? { y: [0, -1, 0, -2, 0] }
-              : prepAction === "mustache" && isPreparing
-                ? { rotate: [0, -3, 3, 0] }
-                : { y: 0, rotate: 0 }
-          }
-          transition={SOFT}
-          style={{ transformOrigin: "70px 70px" }}
         />
         <ellipse cx="66" cy="78" rx="1.5" ry="1" fill="hsl(8 60% 35%)" />
         <ellipse cx="74" cy="78" rx="1.5" ry="1" fill="hsl(8 60% 35%)" />
 
-        {/* Mustache (under nose, blends to beard) */}
+        {/* Mustache */}
         <motion.path
           d="M 50 84 Q 60 80, 70 82 Q 80 80, 90 84 Q 86 88, 78 86 Q 73 88, 70 86 Q 67 88, 62 86 Q 54 88, 50 84 Z"
           fill="hsl(0 0% 8%)"
           stroke="hsl(0 0% 4%)"
           strokeWidth="0.7"
-          animate={
-            isSinging
-              ? { y: [0, 1, 0] }
-              : prepAction === "mustache" && isPreparing
-                ? { scaleX: [1, 1.08, 0.95, 1.05, 1] }
-                : { scaleX: 1, y: 0 }
-          }
+          animate={isSinging ? { y: [0, 1, 0] } : { y: 0 }}
           transition={
             isSinging
               ? { duration: 0.4, repeat: Infinity, ease: "easeInOut" }
-              : prepAction === "mustache" && isPreparing
-                ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
-                : SPRING
+              : SPRING
           }
-          style={{ transformOrigin: "70px 84px" }}
         />
 
-        {/* Beard - thick, full */}
+        {/* Beard */}
         <path
           d="M 38 78 Q 35 100, 50 110 Q 60 116, 70 116 Q 80 116, 90 110 Q 105 100, 102 78 Q 100 90, 90 95 Q 80 100, 70 100 Q 60 100, 50 95 Q 40 90, 38 78 Z"
           fill="hsl(0 0% 9%)"
@@ -295,7 +335,7 @@ function GubbeSvg({ state }: { state: AnthemState }) {
           strokeWidth="0.7"
         />
 
-        {/* Mouth WIDE OPEN when singing - dark cavity with tongue */}
+        {/* Mouth */}
         {isSinging ? (
           <g>
             <ellipse
@@ -307,7 +347,6 @@ function GubbeSvg({ state }: { state: AnthemState }) {
               stroke="hsl(0 0% 5%)"
               strokeWidth="1.2"
             />
-            {/* Tongue */}
             <ellipse
               cx="70"
               cy={95 + mouthHeightSinging * 0.25}
@@ -315,7 +354,6 @@ function GubbeSvg({ state }: { state: AnthemState }) {
               ry={mouthHeightSinging * 0.18}
               fill="hsl(355 60% 45%)"
             />
-            {/* Upper teeth */}
             <rect
               x={70 - mouthWidthSinging * 0.6}
               y={95 - mouthHeightSinging * 0.55}
@@ -324,23 +362,6 @@ function GubbeSvg({ state }: { state: AnthemState }) {
               fill="hsl(40 30% 92%)"
             />
           </g>
-        ) : prepAction === "throat" && isPreparing ? (
-          <motion.ellipse
-            cx="70"
-            cy="93"
-            fill="hsl(355 50% 30%)"
-            animate={{ rx: [3, 6, 3], ry: [2, 4, 2] }}
-            transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ) : prepAction === "breath" && isPreparing ? (
-          <motion.ellipse
-            cx="70"
-            cy="92"
-            rx="4"
-            fill="hsl(355 40% 30%)"
-            animate={{ ry: [1, 3, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
         ) : (
           <path
             d="M 60 92 Q 70 96, 80 92"
@@ -352,159 +373,6 @@ function GubbeSvg({ state }: { state: AnthemState }) {
         )}
       </motion.g>
     </motion.svg>
-  );
-}
-
-function Body({
-  prepAction,
-  isPreparing,
-  isSinging,
-  intensity,
-  reduce,
-}: {
-  prepAction: PrepAction;
-  isPreparing: boolean;
-  isSinging: boolean;
-  intensity: number;
-  reduce: boolean;
-}) {
-  return (
-    <motion.g
-      animate={
-        reduce
-          ? undefined
-          : isSinging
-            ? { scaleY: 1 + intensity * 0.04 }
-            : prepAction === "breath" && isPreparing
-              ? { scaleY: [1, 1.06, 1, 1.06, 1] }
-              : { scaleY: 1 }
-      }
-      transition={
-        prepAction === "breath" && isPreparing
-          ? { duration: 4, repeat: Infinity, ease: "easeInOut" }
-          : SOFT
-      }
-      style={{ transformOrigin: "70px 130px" }}
-    >
-      {/* Tailcoat shoulders/back */}
-      <path
-        d="M 28 110 Q 32 120, 40 122 L 40 160 L 100 160 L 100 122 Q 108 120, 112 110 Q 110 105, 100 110 Q 90 116, 70 116 Q 50 116, 40 110 Q 30 105, 28 110 Z"
-        fill="url(#coat)"
-        stroke="hsl(0 0% 4%)"
-        strokeWidth="1"
-      />
-
-      {/* White waistcoat under */}
-      <path
-        d="M 55 116 L 55 160 L 85 160 L 85 116 L 70 122 Z"
-        fill="hsl(40 25% 94%)"
-        stroke="hsl(35 15% 80%)"
-        strokeWidth="0.8"
-      />
-
-      {/* Waistcoat buttons */}
-      {[124, 132, 140, 148].map((y) => (
-        <circle key={y} cx="70" cy={y} r="1.4" fill="hsl(38 60% 55%)" stroke="hsl(35 50% 40%)" strokeWidth="0.4" />
-      ))}
-
-      {/* Bow tie */}
-      <g>
-        <path
-          d="M 56 117 L 64 113 L 64 121 Z"
-          fill="hsl(40 25% 94%)"
-          stroke="hsl(35 15% 70%)"
-          strokeWidth="0.6"
-        />
-        <path
-          d="M 84 117 L 76 113 L 76 121 Z"
-          fill="hsl(40 25% 94%)"
-          stroke="hsl(35 15% 70%)"
-          strokeWidth="0.6"
-        />
-        <ellipse cx="70" cy="117" rx="3" ry="2.5" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.6" />
-      </g>
-
-      {/* LEFT ARM (gestures) */}
-      <motion.g
-        animate={
-          isSinging
-            ? { rotate: [-30, -25, -32, -22, -30] }
-            : prepAction === "stretch" && isPreparing
-              ? { rotate: [-10, -25, -10] }
-              : prepAction === "hat" && isPreparing
-                ? { rotate: [-5, -15, -5] }
-                : { rotate: -8 }
-        }
-        transition={
-          isSinging
-            ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" }
-            : isPreparing
-              ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
-              : SOFT
-        }
-        style={{ transformOrigin: "32px 118px" }}
-      >
-        <path
-          d="M 32 116 Q 18 120, 8 130 Q 6 134, 12 138 Q 20 134, 26 132 L 32 124 Z"
-          fill="url(#coat)"
-          stroke="hsl(0 0% 4%)"
-          strokeWidth="0.8"
-        />
-        {/* White cuff */}
-        <rect x="6" y="132" width="10" height="4" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.4" />
-        {/* Hand */}
-        <ellipse cx="6" cy="138" rx="5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
-      </motion.g>
-
-      {/* RIGHT ARM with Italian flag handkerchief */}
-      <motion.g
-        animate={
-          isSinging
-            ? { rotate: [30, 25, 32, 22, 30] }
-            : prepAction === "stretch" && isPreparing
-              ? { rotate: [10, 25, 10] }
-              : prepAction === "mustache" && isPreparing
-                ? { rotate: [10, -5, 10] }
-                : { rotate: 8 }
-        }
-        transition={
-          isSinging
-            ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" }
-            : isPreparing
-              ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
-              : SOFT
-        }
-        style={{ transformOrigin: "108px 118px" }}
-      >
-        <path
-          d="M 108 116 Q 122 120, 132 130 Q 134 134, 128 138 Q 120 134, 114 132 L 108 124 Z"
-          fill="url(#coat)"
-          stroke="hsl(0 0% 4%)"
-          strokeWidth="0.8"
-        />
-        <rect x="124" y="132" width="10" height="4" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.4" />
-        <ellipse cx="134" cy="138" rx="5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
-
-        {/* Italian flag handkerchief dangling */}
-        <motion.g
-          animate={
-            isSinging
-              ? { rotate: [-3, 5, -3, 4, -3], y: [0, 1, 0] }
-              : { rotate: 0, y: 0 }
-          }
-          transition={
-            isSinging
-              ? { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
-              : SOFT
-          }
-          style={{ transformOrigin: "134px 142px" }}
-        >
-          <rect x="130" y="142" width="4" height="14" fill="hsl(140 70% 40%)" />
-          <rect x="134" y="142" width="4" height="14" fill="hsl(40 30% 95%)" />
-          <rect x="138" y="142" width="4" height="14" fill="hsl(5 78% 52%)" />
-        </motion.g>
-      </motion.g>
-    </motion.g>
   );
 }
 
@@ -533,67 +401,4 @@ function FloatingNote({
       ♪
     </motion.text>
   );
-}
-
-function prepHeadAnim(action: PrepAction) {
-  switch (action) {
-    case "throat":
-      return { rotate: [0, 4, 0, 4, 0], y: [0, 2, 0, 2, 0] };
-    case "mustache":
-      return { rotate: [-2, 2, -2], scale: 1.02 };
-    case "nose":
-      return { rotate: [0, 1, -1, 0], y: [0, 1, 0] };
-    case "hat":
-      return { rotate: [-3, 3, -3, 0], y: [0, -1, 0] };
-    case "stretch":
-      return { rotate: [-8, 8, -8, 0] };
-    case "belly":
-      return { rotate: 0, y: 0 };
-    case "breath":
-      return { scale: [1, 1.04, 1, 1.04, 1] };
-    case "focus":
-      return { rotate: 0, scale: 0.99 };
-  }
-}
-
-function prepHeadTransition(action: PrepAction): Transition {
-  switch (action) {
-    case "throat":
-      return { duration: 0.7, repeat: Infinity, ease: "easeInOut" };
-    case "mustache":
-      return { duration: 1.4, repeat: Infinity, ease: "easeInOut" };
-    case "nose":
-      return { duration: 1.6, repeat: Infinity, ease: "easeInOut" };
-    case "hat":
-      return { duration: 1.2, repeat: Infinity, ease: "easeInOut" };
-    case "stretch":
-      return { duration: 3, repeat: Infinity, ease: "easeInOut" };
-    case "belly":
-      return SOFT;
-    case "breath":
-      return { duration: 4, repeat: Infinity, ease: "easeInOut" };
-    case "focus":
-      return SOFT;
-  }
-}
-
-function prepBrowAnim(action: PrepAction) {
-  switch (action) {
-    case "throat":
-      return { y: [0, 2, 0] };
-    case "mustache":
-      return { y: 0 };
-    case "nose":
-      return { y: [0, 1, 0] };
-    case "hat":
-      return { y: [0, -2, 0] };
-    case "stretch":
-      return { y: [0, -1, 0] };
-    case "belly":
-      return { y: [0, 1, 0] };
-    case "breath":
-      return { y: [0, -2, 0, -2, 0] };
-    case "focus":
-      return { y: -1 };
-  }
 }

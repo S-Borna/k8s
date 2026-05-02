@@ -5,8 +5,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { ChapterCard } from "@/components/ChapterCard";
 import { NamePrompt } from "@/components/NamePrompt";
 import { Gubbe } from "@/components/Gubbe";
-import { AnthemLyrics } from "@/components/AnthemLyrics";
-import { useAnthemState } from "@/hooks/useAnthemState";
 import { staggerChild, staggerParent, hoverLift, spring } from "@/lib/motion";
 import { chapters } from "@/lib/contentLoader";
 import { useAppState, useLastVisitedChapter } from "@/hooks/useAppState";
@@ -19,7 +17,6 @@ import {
 export default function Dashboard() {
   const { state } = useAppState();
   const lastVisited = useLastVisitedChapter();
-  const [anthemRef, anthem] = useAnthemState();
   const activeChapters = chapters.filter((c) => !c.skipped);
 
   const completedChapters = countCompletedChapters(activeChapters, state);
@@ -38,7 +35,6 @@ export default function Dashboard() {
 
   return (
     <motion.div variants={staggerParent} initial="initial" animate="enter">
-      <audio ref={anthemRef} src="/inno-bocelli.mp3" preload="auto" />
       <NamePrompt />
       <PageHeader
         eyebrow={greeting}
@@ -46,7 +42,7 @@ export default function Dashboard() {
           <>
             Kubernetes med{" "}
             <em className="italian-flag font-display italic">Giacomo</em>{" "}
-            <Gubbe state={anthem} />
+            <Gubbe />
           </>
         }
         description={
@@ -57,7 +53,6 @@ export default function Dashboard() {
           </>
         }
       />
-      <AnthemLyrics state={anthem} />
 
       <motion.div
         variants={staggerChild}
