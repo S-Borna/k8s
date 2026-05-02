@@ -1,5 +1,6 @@
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, AnimatePresence } from "motion/react";
 import type { Transition } from "motion/react";
+import { Pause } from "lucide-react";
 import type { AnthemState } from "@/hooks/useAnthemState";
 import type { PrepAction } from "@/lib/anthemConfig";
 
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export function Gubbe({ state }: Props) {
+  const isPlaying = state.phase !== "idle";
   return (
     <span className="relative -my-2 inline-block align-middle">
       <button
@@ -16,11 +18,25 @@ export function Gubbe({ state }: Props) {
         aria-label={
           state.phase === "idle"
             ? "Klicka för att starta nationalsången"
-            : "Pausa nationalsången"
+            : "Klicka för att pausa"
         }
         className="group relative cursor-pointer rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-amber/50"
       >
         <GubbeSvg state={state} />
+        <AnimatePresence>
+          {isPlaying && (
+            <motion.span
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ duration: 0.25 }}
+              className="absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full bg-bg/85 text-amber backdrop-blur ring-1 ring-amber/40 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition"
+              aria-hidden
+            >
+              <Pause size={12} fill="currentColor" />
+            </motion.span>
+          )}
+        </AnimatePresence>
       </button>
     </span>
   );
@@ -87,6 +103,38 @@ function GubbeSvg({ state }: { state: AnthemState }) {
         intensity={intensity}
         reduce={reduce}
       />
+
+      {/* Roving hand — appears for nose-swipe prep action */}
+      {isPreparing && prepAction === "nose" && !reduce && (
+        <motion.g
+          initial={{ x: 60, y: 80, opacity: 0 }}
+          animate={{
+            x: [60, 0, -8, -10, -8, 8, 12, 60],
+            y: [80, 60, 65, 70, 78, 70, 65, 80],
+            opacity: [0, 1, 1, 1, 1, 1, 1, 0],
+          }}
+          transition={{ duration: 8.5, ease: "easeInOut", times: [0, 0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1] }}
+        >
+          <ellipse cx="70" cy="70" rx="6" ry="5" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
+          {/* Index finger pointing up */}
+          <ellipse cx="70" cy="62" rx="1.5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.6" />
+        </motion.g>
+      )}
+
+      {/* Roving hand — chest pat for belly action */}
+      {isPreparing && prepAction === "belly" && !reduce && (
+        <motion.g
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: [0, 1, 1, 1, 1, 1, 0],
+            x: [0, -16, -16, -16, -16, -16, 0],
+            y: [0, 30, 28, 32, 28, 30, 0],
+          }}
+          transition={{ duration: 7, ease: "easeInOut", times: [0, 0.1, 0.3, 0.5, 0.7, 0.9, 1] }}
+        >
+          <ellipse cx="86" cy="100" rx="6" ry="5" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
+        </motion.g>
+      )}
 
       {/* HEAD WRAPPER - dominant */}
       <motion.g
@@ -493,10 +541,14 @@ function prepHeadAnim(action: PrepAction) {
       return { rotate: [0, 4, 0, 4, 0], y: [0, 2, 0, 2, 0] };
     case "mustache":
       return { rotate: [-2, 2, -2], scale: 1.02 };
+    case "nose":
+      return { rotate: [0, 1, -1, 0], y: [0, 1, 0] };
     case "hat":
       return { rotate: [-3, 3, -3, 0], y: [0, -1, 0] };
     case "stretch":
       return { rotate: [-8, 8, -8, 0] };
+    case "belly":
+      return { rotate: 0, y: 0 };
     case "breath":
       return { scale: [1, 1.04, 1, 1.04, 1] };
     case "focus":
@@ -510,10 +562,14 @@ function prepHeadTransition(action: PrepAction): Transition {
       return { duration: 0.7, repeat: Infinity, ease: "easeInOut" };
     case "mustache":
       return { duration: 1.4, repeat: Infinity, ease: "easeInOut" };
+    case "nose":
+      return { duration: 1.6, repeat: Infinity, ease: "easeInOut" };
     case "hat":
       return { duration: 1.2, repeat: Infinity, ease: "easeInOut" };
     case "stretch":
       return { duration: 3, repeat: Infinity, ease: "easeInOut" };
+    case "belly":
+      return SOFT;
     case "breath":
       return { duration: 4, repeat: Infinity, ease: "easeInOut" };
     case "focus":
@@ -527,10 +583,14 @@ function prepBrowAnim(action: PrepAction) {
       return { y: [0, 2, 0] };
     case "mustache":
       return { y: 0 };
+    case "nose":
+      return { y: [0, 1, 0] };
     case "hat":
       return { y: [0, -2, 0] };
     case "stretch":
       return { y: [0, -1, 0] };
+    case "belly":
+      return { y: [0, 1, 0] };
     case "breath":
       return { y: [0, -2, 0, -2, 0] };
     case "focus":

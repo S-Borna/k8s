@@ -88,10 +88,10 @@ function KaraokeStack({ activeIndex }: { activeIndex: number }) {
         {prev && (
           <motion.div
             key={`prev-${activeIndex - 1}`}
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 0.4, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.4 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             className="font-display text-base italic text-text-faint"
           >
             {prev.text}
@@ -103,10 +103,10 @@ function KaraokeStack({ activeIndex }: { activeIndex: number }) {
         {current && (
           <motion.div
             key={`current-${activeIndex}`}
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="font-display text-2xl italic leading-snug md:text-3xl"
           >
             <ItalianFlagText text={current.text} />
@@ -119,7 +119,7 @@ function KaraokeStack({ activeIndex }: { activeIndex: number }) {
           key={`next-${activeIndex + 1}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.45 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="font-display text-base italic text-text-muted"
         >
           {next.text}
