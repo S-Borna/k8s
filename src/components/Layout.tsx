@@ -5,6 +5,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { PageTransition } from "@/components/PageTransition";
 import { Toaster } from "@/components/Toaster";
+import { ScrollToTop } from "@/components/ScrollToTop";
+import { ShareLinkLoader } from "@/components/ShareLinkLoader";
 import { ToastProvider, useToastsState } from "@/hooks/useToasts";
 
 export function Layout() {
@@ -13,6 +15,8 @@ export function Layout() {
 
   return (
     <ToastProvider value={toasts}>
+      <ScrollToTop />
+      <ShareLinkLoader />
       <div className="relative min-h-screen">
         <AmbientBackground />
         <Sidebar />

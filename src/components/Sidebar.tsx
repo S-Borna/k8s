@@ -2,6 +2,8 @@ import { NavLink } from "react-router-dom";
 import { motion } from "motion/react";
 import { navItems } from "@/lib/nav";
 import { spring } from "@/lib/motion";
+import { getEffectiveExamDate } from "@/hooks/useAppState";
+import { useAppState } from "@/hooks/useAppState";
 
 export function Sidebar() {
   return (
@@ -76,12 +78,18 @@ function SidebarLink({ to, label, icon: Icon }: (typeof navItems)[number]) {
 }
 
 function ExamCountdown() {
-  const examDate = new Date("2026-06-12T08:00:00");
+  const { state } = useAppState();
+  const examDate = getEffectiveExamDate(state.settings);
   const now = new Date();
   const days = Math.max(
     0,
     Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
   );
+  const formatted = examDate.toLocaleDateString("sv-SE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="rounded-2xl border border-border/60 bg-surface/40 p-4">
@@ -92,7 +100,7 @@ function ExamCountdown() {
         <span className="font-display text-3xl text-amber">{days}</span>
         <span className="text-xs text-text-muted">dagar kvar</span>
       </div>
-      <div className="mt-1 text-xs text-text-faint">12 juni 2026</div>
+      <div className="mt-1 text-xs text-text-faint">{formatted}</div>
     </div>
   );
 }

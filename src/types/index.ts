@@ -65,6 +65,8 @@ export type MockExamRun = {
 
 export type Settings = {
   theme: "dark" | "light";
+  userName: string | null;
+  examDate: string | null;
 };
 
 export type AppState = {

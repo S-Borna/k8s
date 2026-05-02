@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { ChapterCard } from "@/components/ChapterCard";
+import { NamePrompt } from "@/components/NamePrompt";
 import { staggerChild, staggerParent, hoverLift, spring } from "@/lib/motion";
 import { chapters } from "@/lib/contentLoader";
 import { useAppState, useLastVisitedChapter } from "@/hooks/useAppState";
@@ -27,10 +28,15 @@ export default function Dashboard() {
     ) ??
     activeChapters[0];
 
+  const greeting = state.settings.userName
+    ? `Hej ${state.settings.userName} · ${activeChapters.length - completedChapters} kapitel kvar`
+    : `${activeChapters.length - completedChapters} kapitel kvar`;
+
   return (
     <motion.div variants={staggerParent} initial="initial" animate="enter">
+      <NamePrompt />
       <PageHeader
-        eyebrow={`${activeChapters.length - completedChapters} kapitel kvar`}
+        eyebrow={greeting}
         title={
           <>
             Pluggsessioner som <em className="not-italic text-amber">fastnar</em>.
