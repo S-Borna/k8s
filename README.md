@@ -46,37 +46,47 @@ content-source/
 
 Inga genererade filer i `src/content/` — `import.meta.glob('?raw')` läser markdown direkt vid build, parser i `src/lib/markdown.ts` strukturerar.
 
-## Deploy till Vercel + k8s.saidborna.com
+## Deploy till Cloudflare Pages + k8s.saidborna.com
+
+`saidborna.com` ligger redan på Cloudflare DNS, så Pages är rakaste valet — bygge, hosting, DNS och SSL på samma plattform.
 
 ### Engångsstart
 
-1. Pusha repot till GitHub: `git push -u origin main`
-2. Logga in på [vercel.com](https://vercel.com), klicka "Add New → Project"
-3. Importera GitHub-repot `S-Borna/k8s`
-4. Framework preset: **Vite** (auto-detekteras)
-5. Build settings (auto):
+1. Pusha repot till GitHub:
+   ```bash
+   git push -u origin main
+   ```
+2. Logga in på [dash.cloudflare.com](https://dash.cloudflare.com)
+3. Sidomenyn → **Workers & Pages** → **Create application** → fliken **Pages** → **Connect to Git**
+4. Auktorisera GitHub om det inte redan är gjort, välj repot `S-Borna/k8s`
+5. Build settings:
+   - Framework preset: **Vite** (auto-detekteras)
    - Build command: `npm run build`
-   - Output directory: `dist`
-   - Install command: `npm install`
-6. Klicka **Deploy** — första deploy tar ~30s
+   - Build output directory: `dist`
+   - Root directory: `/`
+   - Node version: 22 eller senare (sätts via env-var `NODE_VERSION=22` om Pages default är äldre)
+6. Klicka **Save and Deploy** — första bygget tar ~60s
 
-### Custom domain
+Varje deploy får en URL som `tentaplugg-k8s.pages.dev`.
 
-7. Gå till projekt-settings → **Domains**
-8. Lägg till `k8s.saidborna.com`
-9. Vercel ger dig en CNAME-rekord. I din DNS för `saidborna.com`:
-   ```
-   Type:  CNAME
-   Name:  k8s
-   Value: cname.vercel-dns.com
-   ```
-10. Vänta 1-5 minuter på DNS-propagation. SSL-cert (Let's Encrypt) sätts upp automatiskt.
+### Custom domain — k8s.saidborna.com
+
+7. I Pages-projektet → fliken **Custom domains** → **Set up a custom domain**
+8. Skriv `k8s.saidborna.com` → **Continue**
+9. Cloudflare upptäcker att domänen ligger på samma konto och skapar CNAME-rekordet automatiskt. Klicka **Activate**.
+10. SSL-certifikat utfärdas inom 1-2 minuter (Universal SSL via Let's Encrypt). Ingen manuell konfig.
+
+### SPA-routing
+
+`public/_redirects` har raden `/* /index.html 200`. Cloudflare Pages läser den filen automatiskt vid deploy och alla okända rutter pekas till `index.html` — React Router tar över klient-side. Utan den hade `/kapitel/4` direkt-laddat gett 404.
 
 ### Auto-deploy
 
-Varje push till `main` triggar ny deploy. Branch-deploys får preview-URL:er.
+Varje push till `main` triggar ny deploy. PR-branchar får preview-URL:er automatiskt.
 
-`vercel.json` i repo-roten konfigurerar SPA-fallback (alla routes → `index.html`) och immutable cache på hashade assets.
+### Köra utan custom domain
+
+Om DNS-ändringen inte är gjord ännu — `tentaplugg-k8s.pages.dev` (eller motsvarande) funkar direkt efter första bygget. Säg åt klassen att gå dit tills custom domain är på plats.
 
 ## Personalisering
 
