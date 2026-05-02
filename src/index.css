@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@import "@fontsource-variable/fraunces/index.css";
+@import "@fontsource-variable/dm-sans/index.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "DM Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+
+  --color-bg: hsl(28 14% 6%);
+  --color-bg-elevated: hsl(28 12% 9%);
+  --color-surface: hsl(28 11% 11%);
+  --color-surface-2: hsl(28 10% 14%);
+  --color-surface-3: hsl(28 9% 18%);
+  --color-border: hsl(30 12% 20%);
+  --color-border-strong: hsl(30 14% 28%);
+
+  --color-text: hsl(38 30% 94%);
+  --color-text-muted: hsl(35 14% 72%);
+  --color-text-faint: hsl(35 10% 50%);
+
+  --color-amber: hsl(35 95% 62%);
+  --color-amber-soft: hsl(35 80% 70%);
+  --color-amber-deep: hsl(28 90% 50%);
+  --color-rose: hsl(12 80% 64%);
+  --color-plum: hsl(330 35% 45%);
+  --color-sage: hsl(140 35% 60%);
+
+  --shadow-glow-amber: 0 0 0 1px hsl(35 95% 62% / 0.18), 0 8px 32px -8px hsl(35 95% 50% / 0.35);
+  --shadow-card: 0 1px 0 0 hsl(40 30% 100% / 0.04) inset, 0 12px 40px -16px hsl(20 50% 4% / 0.6);
+
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+    margin: 0;
+  }
+
+  ::selection {
+    background-color: hsl(35 95% 62% / 0.3);
+    color: var(--color-text);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(30 10% 22%);
+    border-radius: 9999px;
+    border: 2px solid var(--color-bg);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(30 12% 32%);
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "ss01", "ss02";
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility glass {
+  background: linear-gradient(
+    135deg,
+    hsl(28 12% 12% / 0.72) 0%,
+    hsl(28 10% 9% / 0.62) 100%
+  );
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid hsl(40 20% 80% / 0.06);
+  box-shadow: var(--shadow-card);
+}
+
+@utility glow-amber {
+  box-shadow: var(--shadow-glow-amber);
+}
+
+@keyframes drift-a {
+  0%,
+  100% {
+    transform: translate3d(-8%, -4%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, 8%, 0) scale(1.1);
+  }
+}
+@keyframes drift-b {
+  0%,
+  100% {
+    transform: translate3d(10%, 12%, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(-12%, -6%, 0) scale(0.95);
+  }
+}
+@keyframes drift-c {
+  0%,
+  100% {
+    transform: translate3d(-4%, 18%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(8%, -10%, 0) scale(1.15);
+  }
+}
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
