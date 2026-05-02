@@ -18,19 +18,32 @@ export default function ChapterPage() {
   const { n } = useParams<{ n: string }>();
   const id = n ? Number(n) : NaN;
   const chapter = Number.isFinite(id) ? getChapter(id) : undefined;
-  const { getChapterProgress, updateChapterProgress } = useAppState();
+  const { getChapterProgress, updateChapterProgress, setState } = useAppState();
+  const chapterId = chapter && !chapter.skipped ? chapter.id : null;
 
   useEffect(() => {
-    if (chapter && !chapter.skipped) {
-      updateChapterProgress(chapter.id, {
-        lastVisited: new Date().toISOString(),
-        status:
-          getChapterProgress(chapter.id).status === "completed"
-            ? "completed"
-            : "in_progress",
-      });
-    }
-  }, [chapter, getChapterProgress, updateChapterProgress]);
+    if (chapterId === null) return;
+    setState((prev) => {
+      const current = prev.chapterProgress[chapterId] ?? {
+        status: "not_started" as const,
+        lastVisited: null,
+        summaryRead: false,
+        handsOnSteps: {},
+      };
+      return {
+        ...prev,
+        chapterProgress: {
+          ...prev.chapterProgress,
+          [chapterId]: {
+            ...current,
+            lastVisited: new Date().toISOString(),
+            status:
+              current.status === "completed" ? "completed" : "in_progress",
+          },
+        },
+      };
+    });
+  }, [chapterId, setState]);
 
   if (!chapter) return <Navigate to="/" replace />;
   if (chapter.skipped) {
