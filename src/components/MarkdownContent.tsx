@@ -56,16 +56,16 @@ export function MarkdownContent({ source, className }: Props) {
             <p className="my-3 leading-relaxed text-text-muted">{children}</p>
           ),
           ul: ({ children }) => (
-            <ul className="my-3 ml-5 list-disc space-y-1 text-text-muted marker:text-text-faint">
+            <ul className="my-4 ml-5 list-disc space-y-1.5 text-text-muted marker:text-text-faint">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="my-3 ml-5 list-decimal space-y-1 text-text-muted marker:text-text-faint">
+            <ol className="my-4 ml-6 list-decimal space-y-2 text-text-muted marker:text-amber/70 marker:font-display">
               {children}
             </ol>
           ),
-          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+          li: ({ children }) => <li className="leading-relaxed pl-1">{children}</li>,
           blockquote: ({ children }) => (
             <blockquote className="my-4 rounded-xl border-l-2 border-amber/60 bg-amber/[0.04] px-4 py-3 text-text">
               {children}

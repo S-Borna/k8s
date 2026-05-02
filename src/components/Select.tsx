@@ -75,7 +75,7 @@ export function Select<T extends string | number>({
         </span>
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
-          transition={spring}
+          transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
           className="text-text-faint"
         >
           <ChevronDown size={14} />
@@ -85,10 +85,10 @@ export function Select<T extends string | number>({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scaleY: 0.96 }}
-            animate={{ opacity: 1, y: 4, scaleY: 1 }}
-            exit={{ opacity: 0, y: -6, scaleY: 0.97 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: -10, scaleY: 0.94 }}
+            animate={{ opacity: 1, y: 6, scaleY: 1 }}
+            exit={{ opacity: 0, y: -8, scaleY: 0.96 }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
             style={{ transformOrigin: "top center" }}
             className="absolute left-0 right-0 top-full z-40 mt-1"
           >
@@ -99,11 +99,11 @@ export function Select<T extends string | number>({
                   return (
                     <motion.li
                       key={String(option.value)}
-                      initial={{ opacity: 0, x: -4 }}
+                      initial={{ opacity: 0, x: -6 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{
-                        duration: 0.16,
-                        delay: Math.min(idx * 0.012, 0.18),
+                        duration: 0.28,
+                        delay: 0.05 + Math.min(idx * 0.022, 0.34),
                         ease: [0.22, 1, 0.36, 1],
                       }}
                     >

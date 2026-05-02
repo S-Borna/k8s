@@ -161,10 +161,19 @@ export function parseMockExam(raw: string): MockExamQuestion[] {
       chapterId: Number.isFinite(chapterId) ? chapterId : null,
       difficulty,
       question,
-      modelAnswer: answer,
+      modelAnswer: normalizeInlineList(answer),
     });
   }
   return out;
+}
+
+function normalizeInlineList(text: string): string {
+  const matches = text.match(/(?:^|\s)(\d+)\)\s+/g);
+  if (!matches || matches.length < 2) return text;
+  return text.replace(/(^|[^\n])\s*(\d+)\)\s+/g, (_full, prefix: string, num: string) => {
+    const lead = prefix && prefix !== "\n" ? `${prefix}\n\n` : "\n";
+    return `${lead}${num}. `;
+  }).trim();
 }
 
 function normalizeDifficulty(s: string): MockExamDifficulty {

@@ -285,8 +285,8 @@ function QuestionCard({
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-border/60 bg-surface/30 p-5">
+      <div className="grid items-stretch gap-4 md:grid-cols-2">
+        <div className="flex flex-col rounded-2xl border border-border/60 bg-surface/30 p-6">
           <div className="text-[11px] uppercase tracking-[0.18em] text-text-faint">
             Ditt svar
           </div>
@@ -295,7 +295,7 @@ function QuestionCard({
             onChange={(e) => onAnswerChange(e.target.value)}
             disabled={phase === "reviewing"}
             placeholder="Skriv ditt svar här. Förklara varför, inte bara vad."
-            className="mt-3 min-h-[180px] w-full resize-y bg-transparent text-sm leading-relaxed text-text placeholder:text-text-faint focus:outline-none disabled:opacity-70"
+            className="mt-4 min-h-[260px] w-full flex-1 resize-y bg-transparent text-[15px] leading-relaxed text-text placeholder:text-text-faint focus:outline-none disabled:opacity-70"
           />
         </div>
 
@@ -304,13 +304,13 @@ function QuestionCard({
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={spring}
-              className="rounded-2xl border border-amber/25 bg-amber/[0.04] p-5"
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col rounded-2xl border border-amber/30 bg-amber/[0.05] p-6"
             >
               <div className="text-[11px] uppercase tracking-[0.18em] text-amber">
                 Modellsvar
               </div>
-              <div className="mt-3">
+              <div className="mt-4 flex-1 text-[15px]">
                 <MarkdownContent source={question.modelAnswer} />
               </div>
             </motion.div>
