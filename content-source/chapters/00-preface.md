@@ -36,7 +36,16 @@ Giacomo betonar att boken är en **bra start men inte räcker** för en DevOps-r
 
 # Lektion
 
-<!-- Fylls i efter lektionen - Giacomos genomgång, Q&A, demos -->
+Första lektionen 8 april kombinerade kap 0–3 i en genomgång. Det praktiska innehållet (kommandon, deployments, port-forward, lastbalansering, namespaces) ligger samlat under **Kap 3 — Skaffa Kubernetes** eftersom det är där hands-on börjar.
+
+Snabb sammanfattning av vad första lektionen täckte:
+
+- Skapade deployment med kicbase/echo-server, exponerade som Service, skalade till 5
+- Port-forward ger INTE riktig lastbalansering — Service gör det
+- Bevisade lastbalansering med curl-loop från intern Alpine-pod
+- Namespace-isolering: kort namn i samma NS, FQDN cross-NS
+- Image pull errors felsöks via `kubectl describe pod` (Events-sektionen)
+- Från nästa lektion: alltid YAML-manifest, inte imperativa kommandon
 
 # Hands-on
 
@@ -72,7 +81,7 @@ Förväntat: 1-2 minuter att starta. När klart: `kubectl get nodes` ska visa 1+
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen - egna övningar Giacomo gick igenom -->
+Inga lektion-specifika hands-on i kap 0. Se Kap 3 för 8 april-genomgången.
 
 # Flashcards
 

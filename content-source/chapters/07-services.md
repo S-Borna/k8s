@@ -75,29 +75,101 @@ Klient → Load Balancer (publik IP:port) → NodePort (nod-IP:hög port) → Cl
 
 # Giacomos tillägg
 
-**kubectl patch** — alternativ till `kubectl edit` för icke-interaktiva miljöer (pipelines, scripts):
-
-```bash
-kubectl patch service web-service -p '{"spec":{"selector":{"app":"web","version":"green"}}}'
-```
-
-`edit` = interaktiv editor. `patch` = programmatiskt, funkar i pipelines.
-
-**Blue/green switching live** — Giacomo visade två deployments (blue + green), en Service. Bytte selector blue → green → noll downtime. EndpointSlice uppdateras direkt, ingen request tappad.
-
-**Broken selector** — Han ändrade selector till `version: broken` (matchar ingen Pod). EndpointSlice tomt, Service ger connection refused. Alla Pods och Deployments såg friska ut — felet var bara i selectorn.
-
 > 💡 Tentarelevant: Testa alltid att Service SVARAR, inte bara att Pods är Running. En broken selector ger 0% downtime-larm men 100% trasig service.
-
-**NodePort live demo** — Patchade Service ClusterIP → NodePort. Nådde service externt via `nod-namn:30157`.
-
-**Publika IP-begränsningar** — Labb-klustret har lika många publika IP som noder (~4). När alla tagna fastnar nya LB-services på `<pending>`. Exponera inte i onödan.
 
 > 💡 Tentarelevant: Förklara skillnaden mellan ClusterIP, NodePort och LoadBalancer. Förstå att de bygger på varandra.
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+**Lektion 21 april — Kap 7: Services, blue/green, patch**
+
+Live-demo-lektion. Giacomo körde fyra centrala demos: blue/green switching, kubectl patch, broken selectors, och Service-typer. Avslutade med en heads-up om Ingress till nästa lektion.
+
+## Vad Giacomo visade
+
+### Blue/green switching live
+
+Han skapade två deployments med samma app men olika versioner — `web-blue` och `web-green` — med 2 replikor var. Båda hade samma label `app: web` men olika `version`-label. En Service `web-service` med selector `app: web, version: blue`. En client-pod med busybox körde curl-loop i bakgrunden.
+
+```bash
+kubectl run client --image=busybox:1.36 -- sh -c 'while true; do wget -qO- web-service; sleep 1; done'
+```
+
+Loopen körde mot Service var sekund. Svaren kom från blue-Pods.
+
+Sedan patchade han Service:n:
+```bash
+kubectl patch service web-service -p '{"spec":{"selector":{"app":"web","version":"green"}}}'
+```
+
+Svaren ändrades **direkt** till green-Pods. **Ingen request tappad.** EndpointSlice uppdaterades omedelbart med nya Pod-IP:ar. Noll downtime.
+
+Det här är blue/green deployment i sin renaste form — två versioner deployade parallellt, switch via Service-selector. Smidigt sätt att testa nya versioner med möjlighet till instant rollback (patcha tillbaka till blue).
+
+### `kubectl patch` demo
+
+```bash
+kubectl patch service web-service -p '{"spec":{"selector":{"app":"web","version":"green"}}}'
+```
+
+Smidigt för pipelines och scripts. `kubectl edit` är smidigare vid terminalen men fungerar inte i icke-interaktiva miljöer (CI/CD). Båda gör samma sak under huven — uppdaterar resursen via API server.
+
+### Broken selector
+
+Giacomo patchade selector till `version: broken`. EndpointSlice blev tomt. Service gav `connection refused`. **Alla Pods och Deployments såg friska ut** — felet var bara i Service.
+
+Lärdom: **testa alltid att servicen SVARAR, inte bara att resurser är Running.** Pods kan vara Running och Deployments kan vara klara, men Service kan vara helt trasig pga selector-typo.
+
+Felsökning: `kubectl describe svc <namn>` visar `Endpoints:` — om det är tomt har selector inget matchning.
+
+### Service-typer live
+
+Giacomo patchade samma Service genom alla tre typer:
+
+- **ClusterIP** → nåbar internt via namn (`curl web-service` från Pod)
+- **NodePort** → nåbar externt via `control-plane-1:30157` (port slumpas i 30000-32767)
+- **LoadBalancer** → fick extern publik IP
+
+Visade att de bygger på varandra. NodePort behåller ClusterIP. LoadBalancer behåller båda. Du tar inte bort lägre lager när du går uppåt.
+
+### Skalning + hicka
+
+Skalade från 2 → 12 replikor — inga problem, smooth. Skalade ner 12 → 2 — kort hicka när en request routades till en terminerande Pod. I produktion löses detta med **graceful shutdown** (preStop hooks + tid att avsluta pågående requests innan termination).
+
+### Publika IP:ar begränsade
+
+Labb-klustret har ~4 publika IP:ar (en per nod). När alla tagna → nya LB-services fastnar på `<pending>`. Giacomo: **exponera inte i onödan, bygg tillbaka till ClusterIP efter test**. Annars blockerar du andras tester.
+
+## Heads-up för nästa lektion (Ingress)
+
+- Labb-klustret kör **Traefik** som ingress controller (inte NGINX)
+- Hands-on från boken kap 8 fungerar **INTE i labb** (kräver att installera egen ingress controller)
+- Kör lokalt istället, men **TLS fungerar inte lokalt** (ej publikt)
+- Onsdag: Giacomos hands-on med Traefik + TLS i labb
+
+## Q&A — viktiga insikter
+
+### Nästa kurs (hösten)
+
+Giacomo gav en heads up:
+- **Flipped classroom utan bok** — tema per lektion, läs på själv
+- Grupper sätter upp **hela K8s-miljö från scratch** (install, ingress, storage, ArgoCD, secrets, CI/CD)
+- Välj själv distribution: K3S, Talos, eller annat
+- Intensivt men **mest lärorika kursen**. Förbereder för LIA.
+
+### CC-kluster
+
+Fortfarande inte redo. Labba i doe25-labb. Vänta med K8s-pipelines.
+
+### LIA-presentationer 29 april
+
+Mattis klass presenterar. Bra att närvara för tips och kontakter. Kl 10, sal 5.
+
+## Kurslogistik
+
+- **Onsdag:** Kapitel 8 (Ingress) + Giacomos hands-on med Traefik i labb
+- **29 april:** LIA-presentationer (Mattis klass)
+- **Kompletteringar:** Fixa innan sommaren, påverkar CSN
 
 # Hands-on
 
@@ -157,7 +229,108 @@ kubectl delete service web
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+Reproducera Giacomos blue/green-demo:
+
+## 1. Två versioner samtidigt
+
+Skapa `blue-green.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: web
+        version: blue
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo:1.0.0
+        args: ["-text=Hello from BLUE"]
+        ports:
+        - containerPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+      version: green
+  template:
+    metadata:
+      labels:
+        app: web
+        version: green
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo:1.0.0
+        args: ["-text=Hello from GREEN"]
+        ports:
+        - containerPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  selector:
+    app: web
+    version: blue
+  ports:
+  - port: 80
+    targetPort: 5678
+```
+
+```bash
+kubectl apply -f blue-green.yaml
+```
+
+## 2. Kör curl-loop i bakgrunden
+
+```bash
+kubectl run client --image=busybox:1.36 -- sh -c 'while true; do wget -qO- web-service; sleep 1; done'
+kubectl logs -f client
+```
+
+Förväntat: "Hello from BLUE" var sekund.
+
+## 3. Switcha till green
+
+```bash
+kubectl patch service web-service -p '{"spec":{"selector":{"app":"web","version":"green"}}}'
+```
+
+Förväntat: Loggen växlar **omedelbart** till "Hello from GREEN". Ingen request tappad.
+
+## 4. Bevisa broken selector
+
+```bash
+kubectl patch service web-service -p '{"spec":{"selector":{"app":"web","version":"broken"}}}'
+kubectl describe svc web-service    # Endpoints: <none>
+```
+
+Förväntat: `connection refused` i client-loggen. Service är "trasig" trots att alla Pods är Running.
+
+## 5. Cleanup
+
+```bash
+kubectl delete -f blue-green.yaml
+kubectl delete pod client
+```
 
 # Flashcards
 
@@ -200,3 +373,7 @@ kubectl delete service web
 ## Q: Vad är External Traffic Policy?
 
 **A:** Styr hur extern trafik routas. `Cluster` (default) - LB över alla noder, döljer ursprungs-IP (klienten ses som Service-IP internt). `Local` - bara Pods på ankomst-noden får trafik, ursprungs-IP bevaras. Local används när du behöver veta klientens IP (loggning, rate-limiting). Cluster är bättre för spridning över alla noder.
+
+## Q: Varför hicker Service vid nedskalning?
+
+**A:** När en Pod tas ner kan en pågående request routas till den terminerande Podden innan EndpointSlice hunnit uppdateras. Klienten får en error. I produktion löses detta med graceful shutdown - preStop hooks + tid för Podden att avsluta pågående requests innan SIGTERM. Det är därför `terminationGracePeriodSeconds` finns.

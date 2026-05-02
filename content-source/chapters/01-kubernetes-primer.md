@@ -44,7 +44,7 @@ Han nämnde också att **kunskap om Linux och nätverk är förutsättningen** f
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+Första lektionen 8 april kombinerade kap 0–3. Se **Kap 3 — Skaffa Kubernetes** för fullständig genomgång av kommandon, deployments, lastbalansering, och namespace-FQDN. Lektionen var primärt hands-on så det praktiska hör hemma där.
 
 # Hands-on
 
@@ -84,7 +84,7 @@ Förväntat: 4-5 namespaces inklusive `default`, `kube-system`, `kube-public`, `
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+Se Kap 3 för 8 april-genomgången.
 
 # Flashcards
 

@@ -74,7 +74,7 @@ Han nämnde också att **scheduler är extremt smart men inte magisk**. Den kan 
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+Första lektionen 8 april kombinerade kap 0–3. Se **Kap 3 — Skaffa Kubernetes** för fullständig genomgång.
 
 # Hands-on
 
@@ -125,7 +125,7 @@ kubectl delete deployment hello
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+Se Kap 3.
 
 # Flashcards
 

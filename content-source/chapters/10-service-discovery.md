@@ -83,13 +83,6 @@ Samma Service-namn kan finnas i olika Namespaces. `resolv.conf` har search domai
 
 Bokens hands-on **kan inte köras i labb** (kräver flera namespaces, ni har bara ett). Kör lokalt.
 
-Giacomo gjorde en **broken DNS-övning** som inlämning. Manifest med tre fel:
-1. `dnsPolicy: None` (stänger av automatisk DNS)
-2. `nameservers: 8.8.8.8` (Google DNS, kan inte resolva interna Services)
-3. `PAYMENTS_HOST: payments` (kort namn, men payments ligger i annat namespace)
-
-Lösning: ändra till `dnsPolicy: ClusterFirst`, ta bort 8.8.8.8, ändra PAYMENTS_HOST till FQDN `payments.finance.svc.cluster.local`.
-
 > 💡 Tentarelevant: Förklara skillnaden mellan kort namn och FQDN. Varför fungerar det att curl:a `service` i samma namespace men inte i annat? Svar: search domains i `/etc/resolv.conf` appendas bara till korta namn — och defaulten är lokalt namespace.
 
 > 💡 Tentarelevant: Vad gör `dnsPolicy: ClusterFirst`? Vad gör `dnsPolicy: None`? När använder man vad?
@@ -98,7 +91,146 @@ Lösning: ändra till `dnsPolicy: ClusterFirst`, ta bort 8.8.8.8, ändra PAYMENT
 
 # Lektion
 
-Lektionen 28 april (eller liknande) handlade om service discovery i praktiken.
+**Lektion 27 april — Kap 10: Service discovery + felsökningslab**
+
+Lektionen var kort på teori, lång på hands-on. Giacomo introducerade en **felsökningsuppgift som lämnades in i Canvas** — manifest med tre medvetna fel som vi skulle hitta och fixa. Lektionen täckte också ny labbmiljö och kubeconfig-tips.
+
+## Vad Giacomo gick igenom
+
+### Kapitel 10-diskussion
+
+- Kapitlet handlade om **DNS, namespaces, och hur services hittar varandra**
+- Flera studenter tyckte det var krångligt att förstå — abstrakt koncept
+- Hands-on från kapitlet **gick inte att köra i labbmiljön** eftersom det krävde flera namespaces (vi har bara ett)
+- Studenter fick utföra övningarna lokalt istället
+
+### Ny labbmiljö
+
+- Den gamla labbmiljön har gått ner och en ny är nu uppe
+- Nya miljön har **extra noder med mer resurser**
+- Detta är fortfarande en nabb-miljö endast för klassen, **inte** CC-miljön
+- Said har kommit in i den nya miljön
+- Samma begränsningar som i den gamla — studenter har en namespace där de kan labba
+
+### Klusterresurser
+
+**Nuvarande labbkluster:**
+- 3 control planes: 2 CPU och 4 GB RAM vardera
+- 3 VM worker nodes: 8 CPU och 16 GB RAM vardera
+- 3 dedikerade servrar: 8 CPU och 64 GB RAM vardera
+
+**CC-kluster (kommande):**
+- 3 control planes: 2 CPU och 4 GB RAM vardera
+- 3 VM workers: 8 CPU och 16 GB RAM vardera
+- 5 dedikerade servrar: 4 med 8 CPU, 1 med 12 CPU, alla med 64 GB RAM
+
+Mycket mer resurser i CC-klustret när det blir tillgängligt.
+
+### Kubeconfig kontextnamn
+
+Default-kontexten som skapas programmatiskt heter inte alltid något bra — kanske bara `default`. Detta blir förvirrande när du har flera kluster (lokalt, labb, CC).
+
+**Hur man ändrar:**
+1. Editera kubeconfig-filen direkt (vim/nano)
+2. Ändra klusternamnet
+3. Uppdatera motsvarande referenser i `context` och `currentContext`
+
+```yaml
+clusters:
+- name: my-labb-kluster      # ← ändra här
+  cluster:
+    ...
+contexts:
+- name: my-labb-context
+  context:
+    cluster: my-labb-kluster  # ← och här (måste matcha)
+    ...
+current-context: my-labb-context  # ← och här
+```
+
+Detta gör det lättare att se vilket kluster man arbetar mot — speciellt med `kube-ps1` som visar context i prompten.
+
+## Hands-on uppgift — Felsökning (CANVAS-INLÄMNING)
+
+**Uppgiftens syfte:** Felsöka och fixa problem i K8s-manifest relaterade till kapitel 10.
+
+### Struktur
+
+Manifest med:
+- **Två namespaces:** SHOP och FINANCE
+- **SHOP namespace:** catalog deployment (HTTP echo) och service
+- **FINANCE namespace:** payments deployment (HTTP echo) och service
+- **En jump deployment** (i shop) med ett check-skript för att testa connectivity
+
+### Check-skriptet testar
+
+1. Åtkomst till `kubernetes` service (default namespace)
+2. Åtkomst till `catalog` service (samma namespace)
+3. HTTP till `catalog` (samma namespace)
+4. Åtkomst till `payments` via environment variable (annat namespace)
+5. HTTP till `payments` (annat namespace)
+
+### Nuvarande status
+
+Alla fem checks failade.
+
+### Instruktioner från Giacomo
+
+- **Ändra INTE** check-skriptet i jump-deploymenten
+- Lösningen är att ändra **andra delar** av manifestet så att skriptet fungerar
+- Studenter kan exec:a in i jump-Podden för felsökning
+- Läs manifesten noga och titta tillbaka på kapitlet för relevanta lösningar
+- Övningen ska köras lokalt (nya namespaces går inte att skapa i labb)
+
+### Lösningen — tre fel i jump-deploymentens pod spec
+
+**Fel 1:** `dnsPolicy: None`
+- Stänger av automatisk DNS-konfiguration
+- **Fix:** Ändra till `dnsPolicy: ClusterFirst`
+
+**Fel 2:** `nameservers: 8.8.8.8` i dnsConfig
+- Google DNS kan inte resolva interna K8s services
+- **Fix:** Ta bort nameservers helt. Behåll dnsConfig med extra search domain för `default.svc.cluster.local` (behövs för check 1: `nslookup kubernetes`).
+
+**Fel 3:** `PAYMENTS_HOST: payments`
+- Kort namn — men payments-Service ligger i `finance` namespace, inte `shop`
+- Korta namn resolveras bara inom samma namespace
+- **Fix:** FQDN: `payments.finance.svc.cluster.local`
+
+### Inlämningstext (det Said skrev)
+
+```
+Hittade tre problem i jump-deploymentens pod spec, alla kopplade till
+DNS och service discovery som boken gick igenom.
+
+Första var att dnsPolicy stod som None. Enligt boken konfigurerar
+Kubernetes automatiskt varje containers resolv.conf med klustrets
+DNS-server och rätt search domains. None stänger av det helt.
+Ändrade till ClusterFirst så containern får sin DNS-config automatiskt.
+
+Andra var att dnsConfig hade 8.8.8.8 som nameserver. Det är Googles
+publika DNS och den vet ingenting om interna K8s-services. Tog bort
+nameservers men behöll dnsConfig med en extra search domain för
+default.svc.cluster.local. Kubernetes-servicen lever i default
+namespace och check 1 försöker resolva den med kort namn, så den
+behövdes.
+
+Tredje var att PAYMENTS_HOST bara stod som payments. Som boken tar
+upp funkar korta namn bara inom samma namespace. Jump ligger i shop,
+payments ligger i finance. Korta namn resolver till
+shop.svc.cluster.local och hittar ingenting. Var tvungen att ange
+hela FQDN, payments.finance.svc.cluster.local, för att DNS ska veta
+exakt vart den ska. Inga genvägar cross-namespace.
+```
+
+### Giacomos uppföljning i Slack
+
+Giacomo bekräftade rätt riktning genom att fråga ledande frågor:
+- "har du testat att exekvera typ `nslookup payments` från jump?"
+- "Funkar det? Ska det funka? Vad kommer `payments` ifrån i podden jump?"
+- "var lever podden för `payments`-tjänsten?"
+
+Sammanfattning av Saids resonemang som klickade: **"FQDN — hela pathen och inga genvägar."**
 
 # Hands-on
 
@@ -149,16 +281,7 @@ nslookup hello
 
 Förväntat: Resolveras till `hello.dev.svc.cluster.local` och dess ClusterIP.
 
-## 7. Testa kort namn (annat namespace)
-
-```bash
-# Detta failar eller ger fel resultat
-nslookup hello.prod
-```
-
-Förväntat: Funkar pga `svc.cluster.local` i search-listan.
-
-## 8. Testa FQDN
+## 7. Testa FQDN
 
 ```bash
 nslookup hello.prod.svc.cluster.local
@@ -166,7 +289,7 @@ nslookup hello.prod.svc.cluster.local
 
 Förväntat: Resolveras direkt utan search domains.
 
-## 9. Städa
+## 8. Städa
 
 ```bash
 exit
@@ -175,31 +298,123 @@ kubectl delete namespace dev prod
 
 # Lektion hands-on
 
-## Service discovery lab — bug fix
+## Service discovery lab — bug fix (Canvas-inlämning)
 
-Manifest med 3 medvetna fel i jump-Pod (boken-stil):
+Komplett manifest med tre medvetna fel:
 
 ```yaml
+apiVersion: v1
+kind: Namespace
+metadata: {name: shop}
+---
+apiVersion: v1
+kind: Namespace
+metadata: {name: finance}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: catalog, namespace: shop}
 spec:
-  dnsPolicy: None              # FEL: stänger av automatisk DNS
-  dnsConfig:
-    nameservers:
-      - 8.8.8.8                # FEL: Google DNS kan inte resolva interna Services
-    searches:
-      - default.svc.cluster.local
-  containers:
-  - name: jump
-    env:
-    - name: PAYMENTS_HOST
-      value: payments           # FEL: kort namn, men payments ligger i finance namespace
+  replicas: 2
+  selector:
+    matchLabels: {app: catalog}
+  template:
+    metadata:
+      labels: {app: catalog}
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo:1.0.0
+        args: ["-text=Hello from catalog"]
+        ports: [{containerPort: 5678}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: catalog, namespace: shop}
+spec:
+  selector: {app: catalog}
+  ports: [{port: 80, targetPort: 5678}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: payments, namespace: finance}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: payments}
+  template:
+    metadata:
+      labels: {app: payments}
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo:1.0.0
+        args: ["-text=Hello from payments"]
+        ports: [{containerPort: 5678}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: payments, namespace: finance}
+spec:
+  selector: {app: payments}
+  ports: [{port: 80, targetPort: 5678}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: jump, namespace: shop}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: jump}
+  template:
+    metadata:
+      labels: {app: jump}
+    spec:
+      dnsPolicy: None              # FEL 1: stänger av automatisk DNS
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8                # FEL 2: Google DNS resolver inte interna services
+        searches:
+          - default.svc.cluster.local
+      containers:
+      - name: jump
+        image: nicolaka/netshoot
+        env:
+        - name: PAYMENTS_HOST
+          value: payments           # FEL 3: kort namn, men payments är i finance NS
+        - name: PAYMENTS_PORT
+          value: "80"
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          # check.sh-skriptet (rör inte) ...
+          sleep infinity
 ```
 
-**Fix:**
-1. `dnsPolicy: ClusterFirst` (eller ta bort fältet — det är default)
-2. Ta bort `nameservers: 8.8.8.8` (men behåll `dnsConfig.searches: [default.svc.cluster.local]` så `nslookup kubernetes` funkar)
-3. `PAYMENTS_HOST: payments.finance.svc.cluster.local`
+## Lösningen — fixad jump pod spec
 
-Verifiera med `kubectl exec -n shop deployments/jump -- /check.sh` — alla 5 checks PASS.
+```yaml
+    spec:
+      dnsPolicy: ClusterFirst       # FIX 1: aktivera automatisk DNS
+      dnsConfig:
+        searches:
+          - default.svc.cluster.local   # behövs för check 1 (kubernetes service)
+      containers:
+      - name: jump
+        env:
+        - name: PAYMENTS_HOST
+          value: payments.finance.svc.cluster.local   # FIX 3: FQDN
+```
+
+## Verifiera
+
+```bash
+kubectl apply -f sd-lab.yml
+kubectl get pods -n shop --watch
+kubectl exec -n shop deployments/jump -- /check.sh
+```
+
+Förväntat: Alla 5 checks PASS. "LAB COMPLETE".
 
 # Flashcards
 
@@ -242,3 +457,7 @@ Verifiera med `kubectl exec -n shop deployments/jump -- /check.sh` — alla 5 ch
 ## Q: Varför ska man använda FQDN i produktionskod?
 
 **A:** Inga gissningar - rätt Service hittas alltid oavsett vilken namespace caller är i. Korta namn är bekväma för utveckling men fragila - en typo i namespace-config bryter dem. FQDN är explicit och self-documenting. Också: korta namn med fel search domains kan resolva till fel Service (samma namn i annat namespace).
+
+## Q: Sammanfatta lösningen på service discovery-labben.
+
+**A:** Tre fel i jump-podden: (1) `dnsPolicy: None` stängde av automatisk DNS — fix: ändra till `ClusterFirst`. (2) `nameservers: 8.8.8.8` — Google DNS kan inte resolva interna services — fix: ta bort, behåll bara extra search domain för `default.svc.cluster.local` (för check 1). (3) `PAYMENTS_HOST: payments` — kort namn cross-namespace funkar inte — fix: FQDN `payments.finance.svc.cluster.local`. Inga genvägar cross-namespace.

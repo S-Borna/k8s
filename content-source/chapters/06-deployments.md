@@ -111,27 +111,97 @@ spec:
 
 # Giacomos tillägg
 
-Giacomo gjorde **live-demos** av rolling updates med olika settings:
-- 20 replikor, maxSurge=1, maxUnavailable=0 → ~2 min, alltid 20 ready
-- 20 replikor, maxSurge=5, maxUnavailable=0 → ~35 sek, alltid 20 ready
-
-Han visade också en **broken deployment** där readiness probe failade — rollouten fastnade. Lösning: `kubectl rollout undo`.
-
-**HPA live-demo** (sneak peek):
-- Skapade load-Pods som curlade servicen i oändlig loop
-- HPA skalade från 3 → 20 Pods när CPU ökade
-- Tog bort load → väntade ~5 min → skalade ner till 1
-- VIKTIGT: Sätt alltid `maxReplicas` — utan tak kan DDoS spinna upp oändliga Pods → enorm faktura
-
-`kubectl scale` blockerat i labbklustret (RBAC). `kubectl edit deployment` fungerar som workaround.
-
 > 💡 Tentarelevant: Skillnaden mellan Deployment, ReplicaSet, Pod. Editera aldrig ReplicaSet direkt.
 
 > 💡 Tentarelevant: Förklara varför nedskalning är långsammare än uppskalning. Svar: undvika "flapping" (skala upp/ner i onödan när last varierar).
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+**Lektion 15 april — Kap 6: Deployments, rollouts, HPA**
+
+Live-demo-tung lektion. Giacomo visade rolling updates med olika parametrar, broken deployments, rollbacks, och en sneak peek på HPA. Mycket att smälta.
+
+## Vad Giacomo visade
+
+### Rolling updates med olika parametrar
+
+Han deployade samma app tre gånger med olika strategier för att visa hastighet vs säkerhet:
+
+- **20 replikor, maxSurge=1, maxUnavailable=0** → ~2 min, alltid 20 ready
+- **20 replikor, maxSurge=5, maxUnavailable=0** → ~35 sek, alltid 20 ready
+- **20 replikor, maxSurge=3, maxUnavailable=3** → snabbare men totalen sjunker tillfälligt till 17
+
+Lärdom: höjer du `maxSurge` får du snabbare deploy men mer resursanvändning under övergången. Tillåter du `maxUnavailable > 0` accepterar du tillfällig minskning av kapacitet.
+
+### Change-cause annotations
+
+```yaml
+metadata:
+  annotations:
+    kubernetes.io/change-cause: "update to version 3"
+```
+
+Syns i `kubectl rollout history`. **Bra för att spåra vad varje revision innehåller**. Annars ser du bara revisionsnumren utan förklaring vad ändringen var.
+
+### Broken deployment (readiness probe)
+
+Giacomo ändrade porten i containern (5677) men lät readiness probe peka på 5678. Pods startade men blev aldrig ready → rollouten fastnade. Pods hängde i `Running` men `0/1 Ready`.
+
+Lösning: `kubectl rollout undo`. Klustret rullade tillbaka till föregående revision. Inget downtime — gamla Pods hade aldrig tagits ner eftersom nya inte blev ready.
+
+### Rollout history — inga dubbletter
+
+När en revision återanvänds (rollback) **flyttas den till slutet av historiken**. Aldrig dubbletter. Detta är en designdetalj för att hålla historiken ren.
+
+### HPA live-demo (sneak peek)
+
+- Skapade load-Pods som curlade servicen i oändlig loop
+- HPA skalade från 3 → 20 Pods när CPU ökade
+- Tog bort load-Pods → väntade ~5 min → skalade ner till 1
+- Visade `behavior`-config för snabbare nedskalning
+- **Krav:** metrics-server installerad + requests/limits på Deployment
+
+### Flera manifest i en fil
+
+Använd `---` för att separera. Giacomo hade Deployment + Service i samma fil. Praktiskt — relaterade resurser ligger ihop. `kubectl apply -f file.yaml` deployar båda.
+
+### Skalning med `kubectl edit`
+
+`kubectl scale` blockerat i labbklustret (RBAC-problem — saknade scale-subresurs). `kubectl edit deployment` fungerade som workaround. Han fixade RBAC senare och skickade ny kubeconfig.
+
+## Q&A — viktiga insikter
+
+### "Man skriver aldrig manifest från scratch"
+
+Giacomo: "Utgå från befintliga manifest eller K8s docs. Kopiera och anpassa." YAML är lätt att fucka upp — börja från ett fungerande exempel.
+
+### `revisionHistoryLimit`
+
+Boken säger 5. Giacomo: **"Vi hade minst 20 på mitt jobb."** Tar minimal plats — sparas som YAML i cluster store. Sätt högt om du har plats. Hellre för många historiska revisioner än för få vid en katastrof.
+
+### DDoS + autoscaling
+
+Utan `maxReplicas` kan en DDoS-attack spinna upp **oändliga Pods** → enorm faktura. Sätt alltid tak. Monitoring + larm när max nås.
+
+### VPA
+
+Giacomo: "Jag har aldrig använt det på något jobb." Går emot cloud-native-principen om horisontell skalning. **HPA är default-valet.**
+
+### Deklarativ modell även i CLI
+
+Även `kubectl create` och `kubectl run` använder deklarativ modell under huven. K8s jämför alltid desired vs observed. Skillnaden är bara HUR du levererar desired state — via YAML eller via CLI-args.
+
+## Problem under lektionen
+
+- **`kubectl scale` blockerat** i labbklustret — RBAC saknade scale-subresurs. Giacomo fixar.
+- **Ny kubeconfig kommer** när permissions uppdateras — Giacomo meddelar i Slack.
+- **Vincent spann upp 500 Pods** för att stresstesta. Giacomo: "Spinn inte upp 500 i onödan, vi delar klustret."
+
+## Kurslogistik
+
+- **CC-klustret** är inte redo. Vänta med K8s-pipelines. Labba i doe25-labb.
+- **Nästa lektion:** Kapitel 7 (Services) — längre kapitel
+- **Handledning:** 14–16 idag
 
 # Hands-on
 
@@ -189,7 +259,94 @@ kubectl delete deployment hello-deploy
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+Reproducera Giacomos demos:
+
+## 1. Rolling update med olika parametrar
+
+Skapa `deploy.yaml` med 20 replikor och `maxSurge=1, maxUnavailable=0`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  annotations:
+    kubernetes.io/change-cause: "version 1"
+spec:
+  replicas: 20
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
+```
+
+Apply:
+```bash
+kubectl apply -f deploy.yaml
+kubectl rollout status deployment/web
+```
+
+Triggera rolling update:
+```bash
+kubectl set image deployment/web nginx=nginx:1.26
+kubectl annotate deployment/web kubernetes.io/change-cause="version 2" --overwrite
+kubectl rollout status deployment/web    # ~2 min
+```
+
+Ändra till `maxSurge: 5` och uppdatera igen — märk skillnaden i hastighet.
+
+## 2. Broken deployment (readiness probe-mismatch)
+
+Lägg till readiness probe på fel port:
+
+```yaml
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080      # nginx lyssnar på 80, inte 8080
+          initialDelaySeconds: 5
+```
+
+Apply, kolla:
+```bash
+kubectl get pods    # 0/1 Ready, fastnar
+kubectl rollout status deployment/web    # timeout
+```
+
+Rollback:
+```bash
+kubectl rollout undo deployment/web
+```
+
+## 3. Rollout history med change-cause
+
+```bash
+kubectl rollout history deployment/web
+```
+
+Förväntat: Lista med revisioner och change-cause-text bredvid varje. Annoteringen följer med i historiken.
+
+## 4. Cleanup
+
+```bash
+kubectl delete deployment/web
+```
 
 # Flashcards
 
@@ -225,10 +382,10 @@ kubectl delete deployment hello-deploy
 
 **A:** Definierar vilka Pods Deploymenten "äger" och hanterar. MÅSTE matcha `template.metadata.labels`. Kan inte ändras efter skapande - vill du ändra labels måste du skapa ny Deployment. Detta är limmet mellan Deployment, ReplicaSet, och Pods.
 
-## Q: Vad är skillnaden mellan `kubectl rollout restart` och `kubectl delete pod`?
+## Q: Vad är `change-cause` annotation?
 
-**A:** `rollout restart` triggar en rolling restart genom Deployment - en Pod i taget, respekterar maxUnavailable, downtime undviks. `kubectl delete pod` tar bort en specifik Pod direkt - om den ägs av Deployment skapas en ny direkt, men du har inte kontroll över ordningen om du gör det på flera. Restart är säkrare.
+**A:** Annotation `kubernetes.io/change-cause` som syns i `kubectl rollout history`. Beskriver vad varje revision innehåller (t.ex. "update to version 3"). Utan den ser du bara revisionsnumren - bra för audit och förståelse av historik. Måste uppdateras manuellt på varje deploy.
 
-## Q: Vad är `kubectl scale` och varför används det sällan i prod?
+## Q: Varför sätter man alltid `maxReplicas` på HPA?
 
-**A:** Imperativt kommando som ändrar replicas-värdet på en Deployment direkt. Funkar men skapar drift mellan klustret och YAML i Git. I prod används HPA (automatisk) eller deklarativ uppdatering av YAML + apply. `kubectl scale` är mer för debugging och tester.
+**A:** Utan tak kan en DDoS-attack eller bug spinna upp oändliga Pods - enorm faktura och resursutmattning av klustret. `maxReplicas` är en safety brake. Sätt också monitoring/larm när max nås så du vet när skalningen träffar taket.

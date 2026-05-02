@@ -69,7 +69,106 @@ Han nämnde att **kontextbyten är en av de farligaste sakerna i K8s**. Du tror 
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+**Lektion 8 april — Kap 0–3 + första hands-on**
+
+Första lektionen kombinerade hela kap 0–3 i en genomgång. Giacomo körde mest live-demos snarare än att gå igenom teori — han ville att vi skulle SE K8s i action innan vi grottade ner i koncepten.
+
+## Vad Giacomo demonstrerade live
+
+**1. Skapade deployment imperativt:**
+```bash
+kubectl create deployment hello-k8s --image=kicbase/echo-server:1.0
+```
+
+Kort efter: `kubectl get pods` visade en Pod med suffix-hash. Detta blev senare relevant när vi pratade om Deployment → ReplicaSet → Pod-hierarkin.
+
+**2. Exponerade som Service:**
+```bash
+kubectl expose deployment hello-k8s --type=ClusterIP --port=8080
+```
+
+Service skapad. Giacomo påpekade att Service behövs för att kunna nå Podden stabilt — Pod-IP:n kan ändras, Service-IP:n är stabil.
+
+**3. Skalade till 5 replikor:**
+```bash
+kubectl scale deployment hello-k8s --replicas=5
+```
+
+Här visade han reconciliation i praktiken — 5 Pods skapades direkt utan att han behövde göra något mer.
+
+**4. Port-forward (men INTE för riktig lastbalansering):**
+```bash
+kubectl port-forward service/hello-k8s 8080:8080
+```
+
+Viktig nyans: port-forward routar trafik till EN Pod, inte load-balancerar. För att SE lastbalanseringen behövde vi göra det inifrån klustret.
+
+**5. Bevisade lastbalansering inifrån klustret:**
+```bash
+kubectl run -it --rm --image=alpine alpine -- sh
+# Inne i Alpine-podden:
+while true; do wget -qO- hello-k8s:8080; done
+```
+
+Curl-loopen visade att svaren kom från olika Pods (echo-server returnerar Pod-namn). Service load-balancerade. Detta var första gången klassen såg "magin" — Service som stabil frontend, Pods som utbytbara backends.
+
+**6. Namespace-isolering:**
+
+Giacomo skapade en namespace, deployade samma app där, visade att korta namn fungerade lokalt men FQDN krävdes cross-namespace:
+```bash
+kubectl create namespace testing
+nslookup hello-k8s                                        # Funkar i samma NS
+nslookup hello-k8s.default.svc.cluster.local              # FQDN, funkar överallt
+```
+
+**7. Image pull error → felsökning:**
+
+Han felstavade ett image-namn medvetet. Pod hamnade i `ErrImagePull`. Visade hur man hittar problemet:
+```bash
+kubectl describe pod <namn>
+# Tittade i Events-sektionen längst ner
+```
+
+Events visar exakt vad som gått fel. Detta är **det första man kollar vid problem**.
+
+**8. Cleanup:**
+```bash
+kubectl delete deployment hello-k8s
+```
+
+Visade att raderar man Deployment försvinner ReplicaSet och Pods automatiskt — owner references hanterar cascading delete.
+
+## Kommandon från lektionen
+
+```bash
+kubectl create deployment hello-k8s --image=kicbase/echo-server:1.0
+kubectl expose deployment hello-k8s --type=ClusterIP --port=8080
+kubectl scale deployment hello-k8s --replicas=5
+kubectl get po,deploy,rs
+kubectl describe pod <namn>
+kubectl port-forward service/hello-k8s 8080:8080
+kubectl run -it --rm --image=alpine alpine -- sh
+kubectl delete deployment hello-k8s
+kubectl create namespace testing
+nslookup hello-k8s
+nslookup hello-k8s.default.svc.cluster.local
+```
+
+## Giacomos regler going forward
+
+- **Läs kapitlet OCH gör alla praktiska moment INNAN lektion** — annars hänger du inte med
+- **Från nästa lektion: YAML-manifest istället för imperativa kommandon** — produktionsmönstret
+- **Kapitel 9 (Wasm) hoppas över** — inte tentarelevant
+- **Linode behövs inte** — Giacomo tillhandahåller labbmiljöer
+- **Ha lokalt kluster + labbkluster redo varje lektion**
+
+## Q&A från lektionen
+
+**Q: ImagePullPolicy `Always` vs `IfNotPresent`?**
+A: `Always` pullar alltid från registry. `IfNotPresent` använder lokal cache om finns. Default beror på image-tagg — `:latest` ger Always, specifika versioner ger IfNotPresent.
+
+**Q: Vad händer med Pods när Deployment raderas?**
+A: Cascading delete via owner references. Deployment äger ReplicaSet, ReplicaSet äger Pods. Radera Deployment → ReplicaSet och Pods försvinner automatiskt.
 
 # Hands-on
 
@@ -125,7 +224,71 @@ Förväntat: `scheduler`, `controller-manager`, och `etcd-0` alla `Healthy`. (De
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+Reproducera Giacomos demo lokalt:
+
+## 1. Skapa deployment imperativt
+
+```bash
+kubectl create deployment hello-k8s --image=kicbase/echo-server:1.0
+kubectl get pods
+```
+
+## 2. Exponera som Service
+
+```bash
+kubectl expose deployment hello-k8s --type=ClusterIP --port=8080
+kubectl get svc
+```
+
+## 3. Skala upp
+
+```bash
+kubectl scale deployment hello-k8s --replicas=5
+kubectl get pods
+```
+
+Förväntat: 5 Pods, alla Running.
+
+## 4. Bevisa lastbalansering
+
+```bash
+kubectl run -it --rm --image=alpine alpine -- sh
+# Inuti Alpine:
+apk add --no-cache curl
+while true; do curl -s hello-k8s:8080 | grep Hostname; sleep 0.3; done
+```
+
+Förväntat: Olika Pod-namn i svaren — Service round-robin:ar mellan Pods.
+
+## 5. Namespace-test
+
+```bash
+kubectl create namespace testing
+kubectl create deployment hello-k8s -n testing --image=kicbase/echo-server:1.0
+kubectl expose deployment hello-k8s -n testing --port=8080
+
+# Inuti Alpine-podden i default:
+nslookup hello-k8s                                  # Resolver lokalt
+nslookup hello-k8s.testing.svc.cluster.local        # FQDN cross-NS
+```
+
+## 6. Provocera image pull error
+
+```bash
+kubectl create deployment broken --image=kicbase/echo-servr:1.0    # typo
+kubectl get pods
+kubectl describe pod -l app=broken
+```
+
+Förväntat: Pod i `ErrImagePull`. Events längst ner i describe visar exakt felet.
+
+## 7. Cleanup
+
+```bash
+kubectl delete deployment hello-k8s broken
+kubectl delete deployment hello-k8s -n testing
+kubectl delete namespace testing
+```
 
 # Flashcards
 
@@ -156,3 +319,11 @@ Förväntat: `scheduler`, `controller-manager`, och `etcd-0` alla `Healthy`. (De
 ## Q: Vad är k3s och när används det?
 
 **A:** En lättviktig K8s-distribution från Rancher. ~50MB binär, körs som en enda process, inkluderar default storage och networking. Designad för IoT, edge computing, och utveckling. Giacomos labbkluster körde k3s.
+
+## Q: Varför ger port-forward INTE riktig lastbalansering?
+
+**A:** `kubectl port-forward` skapar en tunnel direkt till EN specifik Pod, inte till Service. All trafik går till samma Pod. För riktig lastbalansering måste trafiken gå genom Service - vilket kräver att klienten är i klustret (eller att Service exponeras via NodePort/LoadBalancer/Ingress). Port-forward är för debugging, inte testing av lastbalansering.
+
+## Q: Hur felsöker man en Pod som hamnar i ErrImagePull?
+
+**A:** `kubectl describe pod <namn>` och titta i Events-sektionen längst ner. Där står det exakta felet — vanligast: typo i image-namnet, image finns inte i registry, autentisering mot privat registry saknas, eller Docker Hub rate limiting. Events är **det första** man alltid kollar vid Pod-problem.
