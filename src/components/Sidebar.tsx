@@ -28,16 +28,16 @@ export function Sidebar() {
 function Brand() {
   return (
     <div className="flex items-center gap-3 px-2">
-      <div className="relative">
-        <div className="absolute inset-0 rounded-xl bg-amber blur-md opacity-40" />
-        <div className="relative grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-amber to-amber-deep text-bg font-display font-semibold">
-          k8
+      <div className="relative shrink-0">
+        <div className="absolute inset-0 rounded-xl bg-amber blur-md opacity-45" />
+        <div className="relative grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-amber to-amber-deep text-bg font-display text-[15px] font-semibold tracking-tight">
+          K8s
         </div>
       </div>
-      <div className="leading-tight">
+      <div className="flex flex-col items-center text-center leading-tight">
         <div className="font-display text-lg text-text">Tentaplugg</div>
         <div className="text-[11px] uppercase tracking-[0.18em] text-text-faint">
-          Kubernetes · Juni
+          Kubernetes
         </div>
       </div>
     </div>
