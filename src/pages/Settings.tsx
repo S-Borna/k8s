@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
-  Calendar,
   Download,
   Link as LinkIcon,
   Trash2,
@@ -11,7 +10,7 @@ import {
 import type { AppState } from "@/types";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { useAppState, DEFAULT_EXAM_DATE } from "@/hooks/useAppState";
+import { useAppState } from "@/hooks/useAppState";
 import { useToasts } from "@/hooks/useToasts";
 import { staggerChild, staggerParent, spring } from "@/lib/motion";
 import { buildShareUrl } from "@/lib/share";
@@ -96,31 +95,6 @@ export default function Settings() {
           placeholder="Ditt namn"
           className="w-full max-w-xs rounded-xl border border-border bg-surface/60 px-3 py-2 text-sm text-text placeholder:text-text-faint focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/30"
         />
-      </SettingsCard>
-
-      <SettingsCard
-        icon={<Calendar size={16} />}
-        title="Tentadag"
-        description={`Standard är ${formatHumanDate(DEFAULT_EXAM_DATE)}. Ändra om din tenta ligger annorlunda.`}
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="date"
-            value={state.settings.examDate ?? ""}
-            onChange={(e) =>
-              updateSettings({ examDate: e.target.value || null })
-            }
-            className="rounded-xl border border-border bg-surface/60 px-3 py-2 text-sm text-text focus:border-amber/50 focus:outline-none"
-          />
-          {state.settings.examDate && (
-            <button
-              onClick={() => updateSettings({ examDate: null })}
-              className="text-xs text-text-faint underline-offset-2 hover:text-text-muted hover:underline"
-            >
-              Återställ till standard
-            </button>
-          )}
-        </div>
       </SettingsCard>
 
       <SettingsCard
@@ -261,10 +235,3 @@ function SettingsCard({
   );
 }
 
-function formatHumanDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("sv-SE", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}

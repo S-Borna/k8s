@@ -117,21 +117,27 @@
 @utility italian-flag {
   background: linear-gradient(
     100deg,
-    hsl(140 75% 38%) 0%,
-    hsl(140 60% 55%) 22%,
-    hsl(40 60% 95%) 45%,
-    hsl(40 60% 95%) 55%,
-    hsl(5 80% 58%) 78%,
-    hsl(5 75% 50%) 100%,
-    hsl(140 75% 38%) 130%
+    hsl(140 70% 40%) 0%,
+    hsl(140 55% 60%) 8.33%,
+    hsl(38 55% 94%) 16.66%,
+    hsl(38 55% 94%) 25%,
+    hsl(8 75% 60%) 33.33%,
+    hsl(5 78% 52%) 41.66%,
+    hsl(140 70% 40%) 50%,
+    hsl(140 55% 60%) 58.33%,
+    hsl(38 55% 94%) 66.66%,
+    hsl(38 55% 94%) 75%,
+    hsl(8 75% 60%) 83.33%,
+    hsl(5 78% 52%) 91.66%,
+    hsl(140 70% 40%) 100%
   );
-  background-size: 220% 100%;
+  background-size: 200% 100%;
   background-position: 0% center;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: italian-flow 9s linear infinite;
+  animation: italian-flow 14s linear infinite;
   filter: drop-shadow(0 1px 8px hsl(40 30% 90% / 0.08));
 }
 
@@ -140,7 +146,7 @@
     background-position: 0% center;
   }
   100% {
-    background-position: -220% center;
+    background-position: -100% center;
   }
 }
 

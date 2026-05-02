@@ -49,7 +49,13 @@ export default function Flashcards() {
       <PageHeader
         eyebrow={`${dueCount} kort due idag`}
         title="Flashcards"
-        description="Spaced repetition à la Leitner. Fel kort kommer tillbaka idag, delvis om en dag, kunde om tre. Box 4 dyker upp igen om en vecka."
+        description={
+          <>
+            Spaced repetition à la Leitner.
+            <br />
+            Fel kort kommer tillbaka idag, delvis om en dag, kunde om tre. Box 4 dyker upp igen om en vecka.
+          </>
+        }
       />
 
       <motion.div variants={staggerChild} className="mb-6 flex flex-wrap items-center gap-3">

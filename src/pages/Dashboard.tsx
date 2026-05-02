@@ -43,7 +43,13 @@ export default function Dashboard() {
             <em className="italian-flag font-display italic">Giacomo</em>.
           </>
         }
-        description="Läs · öva · testa. Repetera tills det sitter. Innehåll, flashcards och AI-tenta samlat på ett ställe — utan distraktioner."
+        description={
+          <>
+            Läs · öva · testa. Repetera tills det sitter.
+            <br />
+            Innehåll, flashcards och AI-tenta samlat på ett ställe — utan distraktioner.
+          </>
+        }
       />
 
       <motion.div
