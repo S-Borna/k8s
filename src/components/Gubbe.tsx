@@ -1,404 +1,539 @@
-import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { useSingingDetector } from "@/hooks/useSingingDetector";
-import type { AnthemPhase } from "@/hooks/useSingingDetector";
+import type { AnthemState } from "@/hooks/useAnthemState";
+import type { PrepAction } from "@/lib/anthemConfig";
 
-export function Gubbe() {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-  const [hovered, setHovered] = useState(false);
-  const reduce = useReducedMotion();
-  const { phase, intensity } = useSingingDetector(audio);
+type Props = {
+  state: AnthemState;
+};
 
-  useEffect(() => {
-    setAudio(audioRef.current);
-  }, []);
-
-  function toggle() {
-    const a = audioRef.current;
-    if (!a) return;
-    if (a.paused) void a.play();
-    else a.pause();
-  }
-
+export function Gubbe({ state }: Props) {
   return (
     <span className="relative -my-2 inline-block align-middle">
-      <audio ref={audioRef} src="/inno-bocelli.mp3" preload="auto" />
       <button
         type="button"
-        onClick={toggle}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocus={() => setHovered(true)}
-        onBlur={() => setHovered(false)}
+        onClick={state.toggle}
         aria-label={
-          phase === "idle"
+          state.phase === "idle"
             ? "Klicka för att starta nationalsången"
             : "Pausa nationalsången"
         }
         className="group relative cursor-pointer rounded-2xl outline-none transition focus-visible:ring-2 focus-visible:ring-amber/50"
       >
-        <GubbeSvg
-          phase={phase}
-          hovered={hovered}
-          intensity={intensity}
-          reduce={reduce ?? false}
-        />
+        <GubbeSvg state={state} />
       </button>
     </span>
   );
 }
 
-type GubbeSvgProps = {
-  phase: AnthemPhase;
-  hovered: boolean;
-  intensity: number;
-  reduce: boolean;
-};
-
-const SOFT: Transition = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
+const SOFT: Transition = { duration: 0.5, ease: [0.22, 1, 0.36, 1] };
 const SPRING: Transition = { type: "spring", stiffness: 280, damping: 18 };
 
-function GubbeSvg({ phase, hovered, intensity, reduce }: GubbeSvgProps) {
+function GubbeSvg({ state }: { state: AnthemState }) {
+  const { phase, prepAction, intensity } = state;
+  const reduce = useReducedMotion() ?? false;
   const isSinging = phase === "singing";
   const isPreparing = phase === "preparing";
-  const isActive = isSinging || isPreparing;
 
-  // Mouth opens larger when intensity is higher
-  const mouthHeightSinging = 11 + intensity * 14;
+  const mouthHeightSinging = 14 + intensity * 18;
+  const mouthWidthSinging = 14 + intensity * 4;
 
   return (
     <motion.svg
-      viewBox="0 0 120 140"
-      width={92}
-      height={108}
-      className="block drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)]"
+      viewBox="0 0 140 168"
+      width={108}
+      height={130}
+      className="block drop-shadow-[0_8px_28px_rgba(0,0,0,0.5)]"
       animate={
         reduce
           ? undefined
           : isSinging
-            ? { y: [0, -2, 0, 2, 0], rotate: [0, -1.5, 0, 1.5, 0] }
+            ? { y: [0, -3, 0, 2, 0] }
             : isPreparing
-              ? { y: [0, -1, 0], rotate: [0, -1, 0, 1, 0] }
-              : hovered
-                ? { y: -3, rotate: -1 }
-                : { y: 0, rotate: 0 }
+              ? { y: [0, -1, 0] }
+              : { y: 0 }
       }
       transition={
         isSinging
           ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" }
           : isPreparing
-            ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+            ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
             : SPRING
       }
     >
       <defs>
-        <radialGradient id="cap-grad" cx="0.5" cy="0.3" r="0.7">
-          <stop offset="0%" stopColor="hsl(345 45% 38%)" />
-          <stop offset="100%" stopColor="hsl(345 55% 22%)" />
+        <radialGradient id="skin" cx="0.45" cy="0.35" r="0.65">
+          <stop offset="0%" stopColor="hsl(28 50% 80%)" />
+          <stop offset="100%" stopColor="hsl(25 45% 62%)" />
         </radialGradient>
-        <radialGradient id="head-grad" cx="0.4" cy="0.35" r="0.7">
-          <stop offset="0%" stopColor="hsl(28 55% 78%)" />
-          <stop offset="100%" stopColor="hsl(25 50% 62%)" />
-        </radialGradient>
-        <radialGradient id="nose-grad" cx="0.4" cy="0.35" r="0.7">
-          <stop offset="0%" stopColor="hsl(15 60% 65%)" />
-          <stop offset="100%" stopColor="hsl(12 65% 50%)" />
-        </radialGradient>
-        <radialGradient id="cheek-grad" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="hsl(8 80% 65% / 0.85)" />
+        <radialGradient id="cheek" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stopColor="hsl(8 80% 65% / 0.7)" />
           <stop offset="100%" stopColor="hsl(8 80% 65% / 0)" />
         </radialGradient>
+        <linearGradient id="coat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(0 0% 14%)" />
+          <stop offset="100%" stopColor="hsl(0 0% 6%)" />
+        </linearGradient>
       </defs>
 
-      {/* Body / vest */}
+      <FloatingNote show={isSinging} side="left" />
+      <FloatingNote show={isSinging && intensity > 0.4} side="right" delay={0.6} />
+
+      {/* BODY (drawn first, behind head) */}
+      <Body
+        prepAction={prepAction}
+        isPreparing={isPreparing}
+        isSinging={isSinging}
+        intensity={intensity}
+        reduce={reduce}
+      />
+
+      {/* HEAD WRAPPER - dominant */}
       <motion.g
         animate={
           reduce
             ? undefined
             : isSinging
-              ? { rotate: [0, -3, 0, 3, 0], scaleY: 1 + intensity * 0.04 }
+              ? { rotate: [0, -2, 0, 2, 0], scale: 1 + intensity * 0.03 }
               : isPreparing
-                ? { rotate: [0, -2, 0, 2, 0] }
-                : hovered
-                  ? { rotate: -1 }
-                  : { rotate: 0 }
+                ? prepHeadAnim(prepAction)
+                : { rotate: 0, scale: 1 }
         }
         transition={
           isSinging
             ? { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
             : isPreparing
-              ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
-              : SOFT
+              ? prepHeadTransition(prepAction)
+              : SPRING
         }
-        style={{ transformOrigin: "60px 95px" }}
+        style={{ transformOrigin: "70px 65px" }}
       >
-        {/* Vest */}
+        {/* Hair flowing back */}
         <path
-          d="M 35 95 Q 40 122, 60 130 Q 80 122, 85 95 L 80 92 L 60 96 L 40 92 Z"
-          fill="hsl(140 35% 28%)"
-          stroke="hsl(140 35% 18%)"
+          d="M 30 38 Q 28 32, 35 25 Q 42 18, 55 18 Q 70 16, 85 19 Q 100 22, 108 32 Q 112 42, 108 55 Q 110 70, 105 80 L 95 75 Q 100 60, 96 48 Q 92 38, 80 35 L 65 36 Q 50 36, 40 42 Q 35 50, 38 65 Q 38 75, 32 75 Q 28 60, 30 38 Z"
+          fill="hsl(0 0% 8%)"
+        />
+
+        {/* Face - large dominant ellipse */}
+        <ellipse
+          cx="70"
+          cy="60"
+          rx="38"
+          ry="42"
+          fill="url(#skin)"
+          stroke="hsl(22 45% 48%)"
           strokeWidth="1"
         />
-        {/* Shirt collar */}
+
+        {/* Hair top swept back */}
         <path
-          d="M 52 92 Q 60 100, 68 92 L 60 96 Z"
-          fill="hsl(40 30% 92%)"
-        />
-        {/* Tie */}
-        <path
-          d="M 58 94 L 62 94 L 63 100 L 60 110 L 57 100 Z"
-          fill="hsl(5 75% 50%)"
+          d="M 40 35 Q 50 24, 70 22 Q 90 24, 100 35 Q 105 28, 95 22 Q 80 14, 70 14 Q 55 14, 45 22 Q 35 28, 40 35 Z"
+          fill="hsl(0 0% 9%)"
         />
 
-        {/* Belly hand when singing — "ta i från magen" */}
+        {/* Sideburns */}
+        <path d="M 35 50 Q 33 65, 40 78 Q 38 85, 36 75 Q 33 65, 35 50 Z" fill="hsl(0 0% 9%)" />
+        <path d="M 105 50 Q 107 65, 100 78 Q 102 85, 104 75 Q 107 65, 105 50 Z" fill="hsl(0 0% 9%)" />
+
+        {/* Eyebrows - thick */}
         <motion.g
           animate={
             isSinging
-              ? { y: [0, -1, 0], rotate: [0, -2, 0, 2, 0] }
-              : { y: 0, rotate: 0 }
-          }
-          transition={
-            isSinging
-              ? { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
-              : SPRING
-          }
-          style={{ transformOrigin: "78px 110px" }}
-        >
-          {isActive && (
-            <ellipse cx="78" cy="111" rx="6" ry="5" fill="hsl(28 55% 75%)" stroke="hsl(25 45% 55%)" strokeWidth="0.8" />
-          )}
-        </motion.g>
-
-        {/* Other arm extended outward when singing */}
-        <motion.g
-          animate={
-            isSinging
-              ? { rotate: [-22, -18, -22, -16, -22] }
+              ? { y: [-1, -3, -1, -3, -1] }
               : isPreparing
-                ? { rotate: [-5, -10, -5] }
-                : { rotate: 0 }
-          }
-          transition={
-            isSinging
-              ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" }
-              : isPreparing
-                ? { duration: 1.3, repeat: Infinity, ease: "easeInOut" }
-                : SOFT
-          }
-          style={{ transformOrigin: "40px 100px" }}
-        >
-          {isActive && (
-            <ellipse cx="34" cy="108" rx="5" ry="4.5" fill="hsl(28 55% 75%)" stroke="hsl(25 45% 55%)" strokeWidth="0.8" />
-          )}
-        </motion.g>
-      </motion.g>
-
-      {/* Head wrapper — wobble during prep, sway during singing */}
-      <motion.g
-        animate={
-          reduce
-            ? undefined
-            : isSinging
-              ? { rotate: [0, -1, 0, 1, 0], scale: 1 + intensity * 0.025 }
-              : isPreparing
-                ? { rotate: [0, 3, -3, 0] }
-                : hovered
-                  ? { rotate: -2, scale: 1.04 }
-                  : { rotate: 0, scale: 1 }
-        }
-        transition={
-          isSinging
-            ? { duration: 0.4, repeat: Infinity, ease: "easeInOut" }
-            : isPreparing
-              ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
-              : SPRING
-        }
-        style={{ transformOrigin: "60px 60px" }}
-      >
-        {/* Head — extra big as Said wanted */}
-        <ellipse cx="60" cy="55" rx="32" ry="34" fill="url(#head-grad)" stroke="hsl(22 45% 48%)" strokeWidth="1" />
-
-        {/* Ears */}
-        <ellipse cx="29" cy="55" rx="4" ry="6" fill="hsl(25 50% 62%)" />
-        <ellipse cx="91" cy="55" rx="4" ry="6" fill="hsl(25 50% 62%)" />
-
-        {/* Cap (basker / coppola) */}
-        <motion.g
-          animate={
-            isPreparing
-              ? { y: [0, -3, 0, -1, 0], rotate: [0, -3, 1, 0] }
-              : hovered && !isActive
-                ? { y: -1, rotate: -2 }
-                : { y: 0, rotate: 0 }
-          }
-          transition={
-            isPreparing
-              ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
-              : SPRING
-          }
-          style={{ transformOrigin: "60px 30px" }}
-        >
-          <path
-            d="M 30 32 Q 35 20, 60 19 Q 85 20, 90 32 Q 90 36, 80 36 L 40 36 Q 30 36, 30 32 Z"
-            fill="url(#cap-grad)"
-            stroke="hsl(345 55% 18%)"
-            strokeWidth="1"
-          />
-          {/* Cap stub */}
-          <ellipse cx="68" cy="22" rx="3" ry="2" fill="hsl(345 55% 28%)" />
-        </motion.g>
-
-        {/* Eyebrows */}
-        <motion.g
-          animate={
-            isSinging
-              ? { y: [-2, -3, -1, -3, -2] }
-              : isPreparing
-                ? { y: [0, -2, 0] }
-                : hovered
-                  ? { y: -2 }
-                  : { y: 0 }
-          }
-          transition={
-            isSinging
-              ? { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
-              : isPreparing
-                ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
-                : SPRING
-          }
-        >
-          <path d="M 42 47 Q 47 44, 53 48" stroke="hsl(0 0% 8%)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          <path d="M 67 48 Q 73 44, 78 47" stroke="hsl(0 0% 8%)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        </motion.g>
-
-        {/* Eyes — closed in passion when singing */}
-        {isSinging ? (
-          <g>
-            <path d="M 44 56 Q 49 52, 54 56" stroke="hsl(0 0% 8%)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-            <path d="M 66 56 Q 71 52, 76 56" stroke="hsl(0 0% 8%)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-          </g>
-        ) : (
-          <g>
-            <ellipse cx="49" cy="56" rx="2.5" ry="3" fill="hsl(0 0% 8%)" />
-            <ellipse cx="71" cy="56" rx="2.5" ry="3" fill="hsl(0 0% 8%)" />
-            <ellipse cx="49.7" cy="55" rx="0.8" ry="1" fill="hsl(40 30% 95%)" />
-            <ellipse cx="71.7" cy="55" rx="0.8" ry="1" fill="hsl(40 30% 95%)" />
-          </g>
-        )}
-
-        {/* Nose — exaggerated big as Said wanted */}
-        <motion.g
-          animate={
-            isPreparing
-              ? { rotate: [0, -4, 4, 0], y: [0, -1, 0] }
-              : hovered
-                ? { y: -1 }
+                ? prepBrowAnim(prepAction)
                 : { y: 0 }
           }
           transition={
-            isPreparing
-              ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
-              : SPRING
+            isSinging
+              ? { duration: 0.45, repeat: Infinity, ease: "easeInOut" }
+              : isPreparing
+                ? { duration: 1.0, repeat: Infinity, ease: "easeInOut" }
+                : SPRING
           }
-          style={{ transformOrigin: "60px 65px" }}
         >
-          <path
-            d="M 56 56 Q 53 64, 54 70 Q 55 76, 60 78 Q 65 76, 66 70 Q 67 64, 64 56 Q 60 54, 56 56 Z"
-            fill="url(#nose-grad)"
-            stroke="hsl(8 60% 42%)"
-            strokeWidth="1"
-          />
-          <ellipse cx="57.5" cy="73" rx="1.5" ry="1" fill="hsl(8 60% 35%)" />
-          <ellipse cx="62.5" cy="73" rx="1.5" ry="1" fill="hsl(8 60% 35%)" />
+          <path d="M 46 51 Q 53 47, 60 51 L 60 54 Q 53 50, 46 54 Z" fill="hsl(0 0% 8%)" />
+          <path d="M 80 51 Q 87 47, 94 51 L 94 54 Q 87 50, 80 54 Z" fill="hsl(0 0% 8%)" />
         </motion.g>
 
-        {/* Cheeks — flush when singing */}
-        {isSinging && (
+        {/* Eyes */}
+        {isSinging ? (
           <g>
-            <ellipse cx="42" cy="72" rx="6" ry="4" fill="url(#cheek-grad)" />
-            <ellipse cx="78" cy="72" rx="6" ry="4" fill="url(#cheek-grad)" />
+            <path d="M 49 60 Q 53 56, 57 60" stroke="hsl(0 0% 8%)" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <path d="M 83 60 Q 87 56, 91 60" stroke="hsl(0 0% 8%)" strokeWidth="2" strokeLinecap="round" fill="none" />
+            {/* Tear of emotion */}
+            {intensity > 0.5 && (
+              <motion.path
+                d="M 50 64 Q 49 72, 51 78"
+                stroke="hsl(195 70% 75%)"
+                strokeWidth="1.6"
+                fill="hsl(195 70% 80% / 0.7)"
+                strokeLinecap="round"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              />
+            )}
+          </g>
+        ) : prepAction === "focus" && isPreparing ? (
+          <g>
+            <path d="M 49 60 Q 53 58, 57 60" stroke="hsl(0 0% 8%)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+            <path d="M 83 60 Q 87 58, 91 60" stroke="hsl(0 0% 8%)" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+          </g>
+        ) : (
+          <g>
+            <ellipse cx="53" cy="60" rx="2.3" ry="2.8" fill="hsl(0 0% 8%)" />
+            <ellipse cx="87" cy="60" rx="2.3" ry="2.8" fill="hsl(0 0% 8%)" />
+            <ellipse cx="53.7" cy="59" rx="0.7" ry="0.9" fill="hsl(40 30% 95%)" />
+            <ellipse cx="87.7" cy="59" rx="0.7" ry="0.9" fill="hsl(40 30% 95%)" />
           </g>
         )}
 
-        {/* Mouth */}
-        {isSinging ? (
-          <motion.ellipse
-            cx="60"
-            cy="84"
-            rx="8"
-            ry={mouthHeightSinging}
-            fill="hsl(355 60% 18%)"
-            stroke="hsl(0 0% 8%)"
-            strokeWidth="1.5"
-            animate={{
-              ry: [mouthHeightSinging * 0.7, mouthHeightSinging, mouthHeightSinging * 0.85, mouthHeightSinging * 1.05, mouthHeightSinging * 0.8],
-            }}
-            transition={{ duration: 0.45, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ) : isPreparing ? (
-          <motion.path
-            animate={{ d: ["M 50 86 Q 60 90, 70 86", "M 50 84 Q 60 88, 70 84", "M 50 88 Q 60 84, 70 88", "M 50 86 Q 60 89, 70 86"] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-            stroke="hsl(0 0% 8%)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
-          />
-        ) : (
-          <path
-            d={hovered ? "M 50 84 Q 60 91, 70 84" : "M 50 86 Q 60 88, 70 86"}
-            stroke="hsl(0 0% 8%)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
-          />
+        {/* Cheeks flushed when singing */}
+        {isSinging && (
+          <g>
+            <ellipse cx="46" cy="74" rx="6" ry="5" fill="url(#cheek)" />
+            <ellipse cx="94" cy="74" rx="6" ry="5" fill="url(#cheek)" />
+          </g>
         )}
 
-        {/* Mustache — twitches on hover, flutters when singing */}
-        <motion.g
+        {/* Nose - prominent */}
+        <motion.path
+          d="M 64 60 Q 60 70, 62 78 Q 65 82, 70 82 Q 75 82, 78 78 Q 80 70, 76 60 Q 70 58, 64 60 Z"
+          fill="hsl(15 55% 70%)"
+          stroke="hsl(8 60% 45%)"
+          strokeWidth="0.9"
+          animate={
+            prepAction === "throat" && isPreparing
+              ? { y: [0, -1, 0, -2, 0] }
+              : prepAction === "mustache" && isPreparing
+                ? { rotate: [0, -3, 3, 0] }
+                : { y: 0, rotate: 0 }
+          }
+          transition={SOFT}
+          style={{ transformOrigin: "70px 70px" }}
+        />
+        <ellipse cx="66" cy="78" rx="1.5" ry="1" fill="hsl(8 60% 35%)" />
+        <ellipse cx="74" cy="78" rx="1.5" ry="1" fill="hsl(8 60% 35%)" />
+
+        {/* Mustache (under nose, blends to beard) */}
+        <motion.path
+          d="M 50 84 Q 60 80, 70 82 Q 80 80, 90 84 Q 86 88, 78 86 Q 73 88, 70 86 Q 67 88, 62 86 Q 54 88, 50 84 Z"
+          fill="hsl(0 0% 8%)"
+          stroke="hsl(0 0% 4%)"
+          strokeWidth="0.7"
           animate={
             isSinging
-              ? { y: [0, 1, 0, -1, 0], scaleX: [1, 1.04, 1, 1.06, 1] }
-              : isPreparing
-                ? { rotate: [0, -3, 3, -2, 0], y: [0, -1, 0] }
-                : hovered
-                  ? { rotate: [0, -3, 3, 0], y: -0.5 }
-                  : { rotate: 0, y: 0 }
+              ? { y: [0, 1, 0] }
+              : prepAction === "mustache" && isPreparing
+                ? { scaleX: [1, 1.08, 0.95, 1.05, 1] }
+                : { scaleX: 1, y: 0 }
           }
           transition={
             isSinging
               ? { duration: 0.4, repeat: Infinity, ease: "easeInOut" }
-              : isPreparing
-                ? { duration: 1.0, repeat: Infinity, ease: "easeInOut" }
-                : hovered
-                  ? { duration: 0.6, ease: "easeInOut" }
-                  : SPRING
+              : prepAction === "mustache" && isPreparing
+                ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+                : SPRING
           }
-          style={{ transformOrigin: "60px 80px" }}
-        >
-          <path
-            d="M 40 80 Q 48 76, 60 80 Q 72 76, 80 80 Q 76 84, 70 82 Q 65 86, 60 82 Q 55 86, 50 82 Q 44 84, 40 80 Z"
-            fill="hsl(0 0% 8%)"
-            stroke="hsl(0 0% 4%)"
-            strokeWidth="0.8"
-          />
-        </motion.g>
-      </motion.g>
-
-      {/* Play indicator dot */}
-      {!isActive && hovered && (
-        <motion.circle
-          cx="60"
-          cy="135"
-          r="2.5"
-          fill="hsl(35 95% 62%)"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 0] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "70px 84px" }}
         />
-      )}
+
+        {/* Beard - thick, full */}
+        <path
+          d="M 38 78 Q 35 100, 50 110 Q 60 116, 70 116 Q 80 116, 90 110 Q 105 100, 102 78 Q 100 90, 90 95 Q 80 100, 70 100 Q 60 100, 50 95 Q 40 90, 38 78 Z"
+          fill="hsl(0 0% 9%)"
+          stroke="hsl(0 0% 4%)"
+          strokeWidth="0.7"
+        />
+
+        {/* Mouth WIDE OPEN when singing - dark cavity with tongue */}
+        {isSinging ? (
+          <g>
+            <ellipse
+              cx="70"
+              cy="95"
+              rx={mouthWidthSinging}
+              ry={mouthHeightSinging * 0.6}
+              fill="hsl(355 65% 12%)"
+              stroke="hsl(0 0% 5%)"
+              strokeWidth="1.2"
+            />
+            {/* Tongue */}
+            <ellipse
+              cx="70"
+              cy={95 + mouthHeightSinging * 0.25}
+              rx={mouthWidthSinging * 0.55}
+              ry={mouthHeightSinging * 0.18}
+              fill="hsl(355 60% 45%)"
+            />
+            {/* Upper teeth */}
+            <rect
+              x={70 - mouthWidthSinging * 0.6}
+              y={95 - mouthHeightSinging * 0.55}
+              width={mouthWidthSinging * 1.2}
+              height="3"
+              fill="hsl(40 30% 92%)"
+            />
+          </g>
+        ) : prepAction === "throat" && isPreparing ? (
+          <motion.ellipse
+            cx="70"
+            cy="93"
+            fill="hsl(355 50% 30%)"
+            animate={{ rx: [3, 6, 3], ry: [2, 4, 2] }}
+            transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ) : prepAction === "breath" && isPreparing ? (
+          <motion.ellipse
+            cx="70"
+            cy="92"
+            rx="4"
+            fill="hsl(355 40% 30%)"
+            animate={{ ry: [1, 3, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ) : (
+          <path
+            d="M 60 92 Q 70 96, 80 92"
+            stroke="hsl(0 0% 8%)"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            fill="none"
+          />
+        )}
+      </motion.g>
     </motion.svg>
   );
+}
+
+function Body({
+  prepAction,
+  isPreparing,
+  isSinging,
+  intensity,
+  reduce,
+}: {
+  prepAction: PrepAction;
+  isPreparing: boolean;
+  isSinging: boolean;
+  intensity: number;
+  reduce: boolean;
+}) {
+  return (
+    <motion.g
+      animate={
+        reduce
+          ? undefined
+          : isSinging
+            ? { scaleY: 1 + intensity * 0.04 }
+            : prepAction === "breath" && isPreparing
+              ? { scaleY: [1, 1.06, 1, 1.06, 1] }
+              : { scaleY: 1 }
+      }
+      transition={
+        prepAction === "breath" && isPreparing
+          ? { duration: 4, repeat: Infinity, ease: "easeInOut" }
+          : SOFT
+      }
+      style={{ transformOrigin: "70px 130px" }}
+    >
+      {/* Tailcoat shoulders/back */}
+      <path
+        d="M 28 110 Q 32 120, 40 122 L 40 160 L 100 160 L 100 122 Q 108 120, 112 110 Q 110 105, 100 110 Q 90 116, 70 116 Q 50 116, 40 110 Q 30 105, 28 110 Z"
+        fill="url(#coat)"
+        stroke="hsl(0 0% 4%)"
+        strokeWidth="1"
+      />
+
+      {/* White waistcoat under */}
+      <path
+        d="M 55 116 L 55 160 L 85 160 L 85 116 L 70 122 Z"
+        fill="hsl(40 25% 94%)"
+        stroke="hsl(35 15% 80%)"
+        strokeWidth="0.8"
+      />
+
+      {/* Waistcoat buttons */}
+      {[124, 132, 140, 148].map((y) => (
+        <circle key={y} cx="70" cy={y} r="1.4" fill="hsl(38 60% 55%)" stroke="hsl(35 50% 40%)" strokeWidth="0.4" />
+      ))}
+
+      {/* Bow tie */}
+      <g>
+        <path
+          d="M 56 117 L 64 113 L 64 121 Z"
+          fill="hsl(40 25% 94%)"
+          stroke="hsl(35 15% 70%)"
+          strokeWidth="0.6"
+        />
+        <path
+          d="M 84 117 L 76 113 L 76 121 Z"
+          fill="hsl(40 25% 94%)"
+          stroke="hsl(35 15% 70%)"
+          strokeWidth="0.6"
+        />
+        <ellipse cx="70" cy="117" rx="3" ry="2.5" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.6" />
+      </g>
+
+      {/* LEFT ARM (gestures) */}
+      <motion.g
+        animate={
+          isSinging
+            ? { rotate: [-30, -25, -32, -22, -30] }
+            : prepAction === "stretch" && isPreparing
+              ? { rotate: [-10, -25, -10] }
+              : prepAction === "hat" && isPreparing
+                ? { rotate: [-5, -15, -5] }
+                : { rotate: -8 }
+        }
+        transition={
+          isSinging
+            ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" }
+            : isPreparing
+              ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+              : SOFT
+        }
+        style={{ transformOrigin: "32px 118px" }}
+      >
+        <path
+          d="M 32 116 Q 18 120, 8 130 Q 6 134, 12 138 Q 20 134, 26 132 L 32 124 Z"
+          fill="url(#coat)"
+          stroke="hsl(0 0% 4%)"
+          strokeWidth="0.8"
+        />
+        {/* White cuff */}
+        <rect x="6" y="132" width="10" height="4" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.4" />
+        {/* Hand */}
+        <ellipse cx="6" cy="138" rx="5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
+      </motion.g>
+
+      {/* RIGHT ARM with Italian flag handkerchief */}
+      <motion.g
+        animate={
+          isSinging
+            ? { rotate: [30, 25, 32, 22, 30] }
+            : prepAction === "stretch" && isPreparing
+              ? { rotate: [10, 25, 10] }
+              : prepAction === "mustache" && isPreparing
+                ? { rotate: [10, -5, 10] }
+                : { rotate: 8 }
+        }
+        transition={
+          isSinging
+            ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" }
+            : isPreparing
+              ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+              : SOFT
+        }
+        style={{ transformOrigin: "108px 118px" }}
+      >
+        <path
+          d="M 108 116 Q 122 120, 132 130 Q 134 134, 128 138 Q 120 134, 114 132 L 108 124 Z"
+          fill="url(#coat)"
+          stroke="hsl(0 0% 4%)"
+          strokeWidth="0.8"
+        />
+        <rect x="124" y="132" width="10" height="4" fill="hsl(40 25% 94%)" stroke="hsl(35 15% 70%)" strokeWidth="0.4" />
+        <ellipse cx="134" cy="138" rx="5" ry="4" fill="hsl(28 50% 75%)" stroke="hsl(22 45% 50%)" strokeWidth="0.7" />
+
+        {/* Italian flag handkerchief dangling */}
+        <motion.g
+          animate={
+            isSinging
+              ? { rotate: [-3, 5, -3, 4, -3], y: [0, 1, 0] }
+              : { rotate: 0, y: 0 }
+          }
+          transition={
+            isSinging
+              ? { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
+              : SOFT
+          }
+          style={{ transformOrigin: "134px 142px" }}
+        >
+          <rect x="130" y="142" width="4" height="14" fill="hsl(140 70% 40%)" />
+          <rect x="134" y="142" width="4" height="14" fill="hsl(40 30% 95%)" />
+          <rect x="138" y="142" width="4" height="14" fill="hsl(5 78% 52%)" />
+        </motion.g>
+      </motion.g>
+    </motion.g>
+  );
+}
+
+function FloatingNote({
+  show,
+  side,
+  delay = 0,
+}: {
+  show: boolean;
+  side: "left" | "right";
+  delay?: number;
+}) {
+  if (!show) return null;
+  const x = side === "left" ? 18 : 122;
+  return (
+    <motion.text
+      x={x}
+      y="40"
+      fontSize="22"
+      fill="hsl(40 30% 90%)"
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: [0, 1, 1, 0], y: [50, 35, 25, 10], rotate: [0, side === "left" ? -10 : 10, 0] }}
+      transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay }}
+      style={{ fontFamily: "serif" }}
+    >
+      ♪
+    </motion.text>
+  );
+}
+
+function prepHeadAnim(action: PrepAction) {
+  switch (action) {
+    case "throat":
+      return { rotate: [0, 4, 0, 4, 0], y: [0, 2, 0, 2, 0] };
+    case "mustache":
+      return { rotate: [-2, 2, -2], scale: 1.02 };
+    case "hat":
+      return { rotate: [-3, 3, -3, 0], y: [0, -1, 0] };
+    case "stretch":
+      return { rotate: [-8, 8, -8, 0] };
+    case "breath":
+      return { scale: [1, 1.04, 1, 1.04, 1] };
+    case "focus":
+      return { rotate: 0, scale: 0.99 };
+  }
+}
+
+function prepHeadTransition(action: PrepAction): Transition {
+  switch (action) {
+    case "throat":
+      return { duration: 0.7, repeat: Infinity, ease: "easeInOut" };
+    case "mustache":
+      return { duration: 1.4, repeat: Infinity, ease: "easeInOut" };
+    case "hat":
+      return { duration: 1.2, repeat: Infinity, ease: "easeInOut" };
+    case "stretch":
+      return { duration: 3, repeat: Infinity, ease: "easeInOut" };
+    case "breath":
+      return { duration: 4, repeat: Infinity, ease: "easeInOut" };
+    case "focus":
+      return SOFT;
+  }
+}
+
+function prepBrowAnim(action: PrepAction) {
+  switch (action) {
+    case "throat":
+      return { y: [0, 2, 0] };
+    case "mustache":
+      return { y: 0 };
+    case "hat":
+      return { y: [0, -2, 0] };
+    case "stretch":
+      return { y: [0, -1, 0] };
+    case "breath":
+      return { y: [0, -2, 0, -2, 0] };
+    case "focus":
+      return { y: -1 };
+  }
 }
