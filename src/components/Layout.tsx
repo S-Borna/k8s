@@ -4,26 +4,32 @@ import { AmbientBackground } from "@/components/AmbientBackground";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomNav } from "@/components/BottomNav";
 import { PageTransition } from "@/components/PageTransition";
+import { Toaster } from "@/components/Toaster";
+import { ToastProvider, useToastsState } from "@/hooks/useToasts";
 
 export function Layout() {
   const location = useLocation();
+  const toasts = useToastsState();
 
   return (
-    <div className="relative min-h-screen">
-      <AmbientBackground />
-      <Sidebar />
+    <ToastProvider value={toasts}>
+      <div className="relative min-h-screen">
+        <AmbientBackground />
+        <Sidebar />
 
-      <main className="md:pl-64">
-        <div className="mx-auto w-full max-w-5xl px-5 pt-6 pb-28 md:px-10 md:pt-10 md:pb-12">
-          <AnimatePresence mode="wait">
-            <PageTransition key={location.pathname}>
-              <Outlet />
-            </PageTransition>
-          </AnimatePresence>
-        </div>
-      </main>
+        <main className="md:pl-64">
+          <div className="mx-auto w-full max-w-5xl px-5 pt-6 pb-28 md:px-10 md:pt-10 md:pb-12">
+            <AnimatePresence mode="wait">
+              <PageTransition key={location.pathname}>
+                <Outlet />
+              </PageTransition>
+            </AnimatePresence>
+          </div>
+        </main>
 
-      <BottomNav />
-    </div>
+        <BottomNav />
+        <Toaster />
+      </div>
+    </ToastProvider>
   );
 }
