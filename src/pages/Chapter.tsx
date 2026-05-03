@@ -12,6 +12,8 @@ import { useActiveTab } from "@/hooks/useActiveTab";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { HandsOnList } from "@/components/HandsOnList";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
+import { ChapterJumper } from "@/components/ChapterJumper";
+import { ChapterPrevNext } from "@/components/ChapterPrevNext";
 import { SANDBOX_LABEL, SANDBOX_URL } from "@/lib/sandbox";
 
 export default function ChapterPage() {
@@ -85,9 +87,10 @@ export default function ChapterPage() {
       </motion.div>
 
       <motion.header variants={staggerChild} className="mb-8">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-text-faint">
-          Kapitel {String(chapter.id).padStart(2, "0")} · ~{chapter.estimatedMinutes} min
-        </div>
+        <ChapterJumper
+          currentId={chapter.id}
+          estimatedMinutes={chapter.estimatedMinutes}
+        />
         <h1 className="mt-2 font-display text-balance text-3xl font-medium leading-[1.1] text-text md:text-5xl">
           {chapter.titleSv}
         </h1>
@@ -125,6 +128,10 @@ export default function ChapterPage() {
           updateChapterProgress(chapter.id, { handsOnSteps: {} })
         }
       />
+
+      <motion.div variants={staggerChild}>
+        <ChapterPrevNext currentId={chapter.id} />
+      </motion.div>
     </motion.div>
   );
 }

@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { ChapterCard } from "@/components/ChapterCard";
 import { NamePrompt } from "@/components/NamePrompt";
-import { Gubbe } from "@/components/Gubbe";
 import { staggerChild, staggerParent, hoverLift, spring } from "@/lib/motion";
 import { chapters } from "@/lib/contentLoader";
 import { useAppState, useLastVisitedChapter } from "@/hooks/useAppState";
@@ -40,9 +39,7 @@ export default function Dashboard() {
         eyebrow={greeting}
         title={
           <>
-            Kubernetes med{" "}
-            <em className="italian-flag font-display italic">Giacomo</em>{" "}
-            <Gubbe />
+            Kubernetes <em className="not-italic text-amber">DOE25</em>
           </>
         }
         description={

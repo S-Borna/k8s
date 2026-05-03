@@ -13,15 +13,21 @@
     "@fontsource-variable/dm-sans": "^5.2.8",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@react-three/postprocessing": "^3.0.4",
     "highlight.js": "^11.11.1",
     "lucide-react": "^1.14.0",
+    "maath": "^0.10.8",
     "motion": "^12.38.0",
+    "postprocessing": "^6.39.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.14.2",
     "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
