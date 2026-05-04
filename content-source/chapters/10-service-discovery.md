@@ -197,40 +197,9 @@ Alla fem checks failade.
 - Korta namn resolveras bara inom samma namespace
 - **Fix:** FQDN: `payments.finance.svc.cluster.local`
 
-### Inlämningstext (det Said skrev)
+### Kärninsikt
 
-```
-Hittade tre problem i jump-deploymentens pod spec, alla kopplade till
-DNS och service discovery som boken gick igenom.
-
-Första var att dnsPolicy stod som None. Enligt boken konfigurerar
-Kubernetes automatiskt varje containers resolv.conf med klustrets
-DNS-server och rätt search domains. None stänger av det helt.
-Ändrade till ClusterFirst så containern får sin DNS-config automatiskt.
-
-Andra var att dnsConfig hade 8.8.8.8 som nameserver. Det är Googles
-publika DNS och den vet ingenting om interna K8s-services. Tog bort
-nameservers men behöll dnsConfig med en extra search domain för
-default.svc.cluster.local. Kubernetes-servicen lever i default
-namespace och check 1 försöker resolva den med kort namn, så den
-behövdes.
-
-Tredje var att PAYMENTS_HOST bara stod som payments. Som boken tar
-upp funkar korta namn bara inom samma namespace. Jump ligger i shop,
-payments ligger i finance. Korta namn resolver till
-shop.svc.cluster.local och hittar ingenting. Var tvungen att ange
-hela FQDN, payments.finance.svc.cluster.local, för att DNS ska veta
-exakt vart den ska. Inga genvägar cross-namespace.
-```
-
-### Giacomos uppföljning i Slack
-
-Giacomo bekräftade rätt riktning genom att fråga ledande frågor:
-- "har du testat att exekvera typ `nslookup payments` från jump?"
-- "Funkar det? Ska det funka? Vad kommer `payments` ifrån i podden jump?"
-- "var lever podden för `payments`-tjänsten?"
-
-Sammanfattning av Saids resonemang som klickade: **"FQDN — hela pathen och inga genvägar."**
+**FQDN — hela pathen och inga genvägar.** Korta namn fungerar bara inom samma namespace; cross-namespace kräver `<service>.<namespace>.svc.cluster.local`.
 
 # Hands-on
 

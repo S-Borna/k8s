@@ -106,7 +106,7 @@ I produktion: peka hostnames mot LB-IP via DNS. Lokalt: editera `/etc/hosts`:
 
 **Lektion 22 april — Kap 8: Ingress, Traefik, TLS**
 
-OBS: Internetproblem under lektionen — inspelning laddades upp separat. Lektionen var live-demo-tung med Traefik istället för bokens NGINX.
+Live-demo-tung lektion med Traefik istället för bokens NGINX.
 
 ## Vad Giacomo visade
 
@@ -179,8 +179,6 @@ Tumregel:
 
 - Kapitel 9 hoppas över (Wasm)
 - En vecka kvar av kursen
-- Handledning kl 14:00
-- Inspelning laddas upp separat (internetproblem under live)
 
 # Hands-on
 

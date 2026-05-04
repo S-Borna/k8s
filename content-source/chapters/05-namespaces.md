@@ -143,8 +143,6 @@ Editera PS1 så att terminal-prompten visar:
 - Aktivt context-namn
 - Aktivt namespace
 
-**Deadline: innan nästa lektion.**
-
 - Bash-användare: editera PS1 i `.bash_profile`
 - Zsh: `.zshrc`
 - PowerShell: annan variabel

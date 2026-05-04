@@ -177,7 +177,7 @@ Giacomo: "Utgå från befintliga manifest eller K8s docs. Kopiera och anpassa." 
 
 ### `revisionHistoryLimit`
 
-Boken säger 5. Giacomo: **"Vi hade minst 20 på mitt jobb."** Tar minimal plats — sparas som YAML i cluster store. Sätt högt om du har plats. Hellre för många historiska revisioner än för få vid en katastrof.
+Boken säger 5. I produktion är 20+ vanligt. Tar minimal plats — sparas som YAML i cluster store. Sätt högt om du har plats. Hellre för många historiska revisioner än för få vid en katastrof.
 
 ### DDoS + autoscaling
 
@@ -185,7 +185,7 @@ Utan `maxReplicas` kan en DDoS-attack spinna upp **oändliga Pods** → enorm fa
 
 ### VPA
 
-Giacomo: "Jag har aldrig använt det på något jobb." Går emot cloud-native-principen om horisontell skalning. **HPA är default-valet.**
+Sällsynt i praktiken. Går emot cloud-native-principen om horisontell skalning. **HPA är default-valet.**
 
 ### Deklarativ modell även i CLI
 
@@ -194,8 +194,8 @@ Giacomo: "Jag har aldrig använt det på något jobb." Går emot cloud-native-pr
 ## Problem under lektionen
 
 - **`kubectl scale` blockerat** i labbklustret — RBAC saknade scale-subresurs. Giacomo fixar.
-- **Ny kubeconfig kommer** när permissions uppdateras — Giacomo meddelar i Slack.
-- **Vincent spann upp 500 Pods** för att stresstesta. Giacomo: "Spinn inte upp 500 i onödan, vi delar klustret."
+- **Ny kubeconfig kommer** när permissions uppdateras.
+- **Stresstestning med många hundra Pods** i ett delat kluster — undvik. Tar resurser från andra och kan trigga node pressure.
 
 ## Kurslogistik
 

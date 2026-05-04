@@ -145,7 +145,7 @@ Labb-klustret har ~4 publika IP:ar (en per nod). När alla tagna → nya LB-serv
 - Labb-klustret kör **Traefik** som ingress controller (inte NGINX)
 - Hands-on från boken kap 8 fungerar **INTE i labb** (kräver att installera egen ingress controller)
 - Kör lokalt istället, men **TLS fungerar inte lokalt** (ej publikt)
-- Onsdag: Giacomos hands-on med Traefik + TLS i labb
+- Heads-up: Giacomos hands-on med Traefik + TLS kommer i labb
 
 ## Q&A — viktiga insikter
 
@@ -161,15 +161,9 @@ Giacomo gav en heads up:
 
 Fortfarande inte redo. Labba i doe25-labb. Vänta med K8s-pipelines.
 
-### LIA-presentationer 29 april
-
-Mattis klass presenterar. Bra att närvara för tips och kontakter. Kl 10, sal 5.
-
 ## Kurslogistik
 
-- **Onsdag:** Kapitel 8 (Ingress) + Giacomos hands-on med Traefik i labb
-- **29 april:** LIA-presentationer (Mattis klass)
-- **Kompletteringar:** Fixa innan sommaren, påverkar CSN
+- **Nästa lektion:** Kapitel 8 (Ingress) + Giacomos hands-on med Traefik i labb
 
 # Hands-on
 

@@ -117,8 +117,6 @@ Giacomo delade ett trasigt manifest med klassen. Alla deployade det. Resultat: n
 - **Lägg till echo-statements** och kolla loggar med `kubectl logs`
 - **Testa i incognito-fönster** — browser cache kan visa gamla svar och förvirra felsökningen
 
-Lisa hade fixat felet men trodde fortfarande att den var trasig — det var browser cachen. Klassiskt.
-
 ## Q&A — viktiga insikter
 
 ### `localhost` delas mellan containers (TENTAFRÅGA)
@@ -161,16 +159,14 @@ Installerar du curl via `kubectl exec` försvinner det när Podden dör. Bättre
 
 ## Problem som uppkom under lektionen
 
-- **Image pull errors:** Flera studenter (Victor, Lisa, Alexander) hade problem med att pulla images från Docker Hub. Kan bero på rate limiting eller Docker Desktop-bugg. Lösning: `docker pull <image>` lokalt först innan deploy.
+- **Image pull errors:** Flera studenter hade problem med att pulla images från Docker Hub. Kan bero på rate limiting eller Docker Desktop-bugg. Lösning: `docker pull <image>` lokalt först innan deploy.
 - **Events inte synliga i labbklustret:** `kubectl describe` visar inga events i doe25-labb. Giacomo skulle kolla behörigheter.
 - **LoadBalancer `<pending>`:** Inga externa IP:ar i labbmiljön eller lokalt. Använd port-forward.
-- **Browser cache:** Lisa hade fixat felet men såg fortfarande nginx default — löstes med incognito-fönster.
+- **Browser cache:** Klassiskt fel — fix:en funkade men cachen visade gammal nginx default. Löstes med incognito-fönster.
 
 ## Kurslogistik (från lektionen)
 
-- **Måndag:** Kapitel 5 (Namespaces) — kort kapitel, ~1 timmes lektion. Testas lokalt (bara en namespace i labbmiljön).
-- **Klassmöte:** 09:30, lektion 10:00
-- **Extra handledning:** Giacomo försöker få Martin att ge handledning på äldre ämnen (monitoring, Portainer, CI/CD)
+- **Nästa kapitel:** Kapitel 5 (Namespaces) — kort kapitel, ~1 timmes lektion. Testas lokalt (bara en namespace i labbmiljön).
 - **Docker Compose:** Fortfarande relevant för Portainer. På sikt ersätts av K8s-manifest. Övergångsperiod.
 - **Nästa K8s-kurs (hösten):** Fokus på att DRIFTA K8s. Grupper får lista av krav, löser själva med CI/CD.
 
