@@ -106,11 +106,142 @@ K8s har default ClusterRoles: `cluster-admin`, `admin`, `edit`, `view`. Använd 
 
 # Giacomos tillägg
 
-<!-- Fylls i efter lektionen -->
+Giacomo öppnade med passet-och-biljetten:
+
+> "Authentication säger vem du är. Authorization säger vad du får göra. På flygplatsen — ID:t släpper dig in i terminalen, biljetten släpper dig ombord på planet."
+
+Om identitetsstrings i kubeconfig:
+
+> "Har du rätt nyckel får du in, oavsett om du heter Alexander eller Axel."
+
+På Vincents fråga om devs behörigheter svarade Giacomo:
+
+> "Ja, ofta read-only. Se deployments, pods, events. DevOps-kultur = skifta driftansvar mot devs. Men spärra ändå max — devs vågar jobba om de inte kan ta ner prod."
+
+Om pod-verbs (lätt missat):
+
+> Tentarelevant: Pods har ingen `update`-verb. Du uppdaterar inte en podd — du raderar och skapar en ny. Det följer immutability-mönstret i Kubernetes.
+
+Om Forbidden vs Unauthorized:
+
+> Tentarelevant: Unauthorized = authN-fel (inte inloggad, token borta/fel). Forbidden = authZ-fel (inloggad, men saknar RBAC-behörighet). Blanda inte ihop dem på tentan.
+
+Om cluster-admin:
+
+> "Behandla cluster-admin som Linux root. Dela inte ut. Använd inte dagligen. Ha en kopia för nödfall. Ge minsta möjliga behörighet — det är både spårbarhet och säkerhet."
+
+Om live-editering av Role:
+
+> Tentarelevant: K8s cachar inte behörighet. Edita en Role och nästa request får ny effekt direkt — ingen ombindning, ingen restart krävs.
+
+LIA-tipset han avslutade med:
+
+> "Första kommandot på ny kubeconfig: `kubectl auth can-i --list`. Får du `* *` på prod är det röd flagga — gå till handledaren. RBAC stöter du på direkt när du installerar appar, de behöver service accounts."
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+Giacomo öppnade kapitlet med flygplats-analogin. Allt som pratar med Kubernetes — kubectl, controllers, Pods, operators — går mot API-servern. Innan request når etcd passerar den tre kontroller i ordning.
+
+Först **authentication (authN)**: "är du den du påstår?" Det är passet på flygplatsen. Giacomo: "Har du rätt nyckel får du in, oavsett om du heter Alexander eller Axel." Misslyckas det — `Unauthorized`. Inte inloggad.
+
+Sen **authorization (authZ)**: "får du göra detta?" Du har giltigt ID men behöver också rätt biljett för att sätta dig på planet. Misslyckas det — `Forbidden`. Du är inloggad, men saknar behörighet.
+
+Sist **admission control**: körs efter authN+authZ. Mutating-controllers kan ändra requesten på vägen (t.ex. lägga till sidecar). Validating-controllers säger ja eller nej (säkerhetspolicies, Kyverno, OPA).
+
+Giacomos egna ord: "Jag kan bevisa att jag är GG (authN), men får GG radera kube-system (authZ)?" Han knöt det direkt till `permission denied` som ni stötte på under labben — det var authZ som sa nej, inte authN.
+
+## Forbidden vs Unauthorized
+
+En distinktion Giacomo ville att alla ska kunna utantill:
+
+- **Unauthorized** = authN-fel. Token borta, fel cert, inte inloggad alls.
+- **Forbidden** = authZ-fel. Inloggad, men RBAC säger nej.
+
+Får du `Forbidden` i kubectl — det är aldrig en login-fråga. Det är en behörighets-fråga.
+
+## Ingen egen identitetsdatabas
+
+Giacomo tryckte hårt på det här: Kubernetes har **ingen egen User-tabell**. Det finns inget `kubectl create user`. Identitet kommer alltid utifrån — client certificates, bearer tokens, eller en extern provider (AD, moln-IAM, OIDC). Allt landar i kubeconfig.
+
+Username-fältet i kubeconfig är bara en etikett. Det är token eller cert som identifierar dig. Giacomo bytte bara token under demon (behöll username) — det funkade ändå, för API-servern bryr sig om kryptot, inte strängen.
+
+Subjects i RBAC är tre saker: **users**, **service accounts**, **groups**.
+
+## RBAC — default deny
+
+RBAC är en allow-list, inte en block-list. **Default deny**: ingenting tillåts förrän det är explicit beviljat. Fördelen: du kan lista exakt vad en användare får göra.
+
+Fyra byggstenar:
+
+- **Role** — namespaced. subject–verb–resource. Typ "get/list på pods i doe25-gg".
+- **RoleBinding** — namespaced. Kopplar en Role till user/SA/group.
+- **ClusterRole** — cluster-wide. Krävs för icke-namespaced resurser som nodes och PersistentVolumes.
+- **ClusterRoleBinding** — cluster-wide.
+
+Mixning funkar: du kan binda en ClusterRole med en RoleBinding i ett specifikt namespace — då gäller cluster-rollens regler men bara i det namespace.
+
+## Verbs = HTTP-metoderna
+
+Verbs är `get`, `list`, `watch`, `create`, `update`, `patch`, `delete`. Giacomo släppte en detalj som lätt blir tentafråga: "Pods har ingen `update` — du uppdaterar inte en podd, du raderar och skapar ny." Det är immutability-mönstret i Kubernetes — pods byts ut, ändras inte.
+
+## Cluster-admin = root
+
+Den som skapar klustret får cluster-admin kubeconfig — `*` på `*`. Giacomo jämförde rakt av med Linux root:
+
+- Dela inte ut.
+- Använd inte dagligen.
+- Ha en kopia i kassaskåp för nödfall.
+- Ge alltid minsta möjliga behörighet till andra.
+
+Två skäl: spårbarhet (vem gjorde vad) och säkerhet (komprometterad token = hela klustret komprometterat).
+
+Hans labb-setup illustrerade det: per-student har vi en egen SA + Role + RoleBinding + en ClusterRole (för att kunna lista nodes/storage classes och skapa PVs). Giacomo: "Ni ska kunna labba utan att sabba — annars vågar ni inte experimentera."
+
+## Live-demo: RBAC-användare från scratch
+
+Giacomo körde hela kedjan på storduken. Först kubeconfig-inspektion:
+
+```bash
+kubectl config view
+```
+
+Han var tydlig: **aldrig `cat` på filen**. Token blir då synlig i terminalen. `config view` redactar känsliga fält. Strukturen i kubeconfig är tre listor + ett current-context:
+
+- `clusters` — endpoint + CA-cert
+- `users` — token eller client cert
+- `contexts` — kombo av user + cluster + namespace
+- `current-context` — vilken som är aktiv
+
+Sen identitet och behörighet:
+
+```bash
+kubectl auth whoami
+kubectl auth can-i create pods
+kubectl auth can-i --list
+kubectl auth can-i '*' '*'        # cluster-admin?
+```
+
+`--list` dumpar allt du får göra. `'*' '*'` är cluster-admin-checken. GG-kontot fick `no` på `* *`. När Giacomo switchade till admin-kubeconfig (client cert) fick samma kommando `yes`.
+
+Sen genererade han en token mot SA:n:
+
+```bash
+kubectl create token pod-reader -n doe25-gg --duration=30m
+```
+
+Han bytte bara token-fältet i kubeconfig — username rörde han inte. Det funkade direkt, för token identifierar.
+
+## Live-editera roll — ingen cachning
+
+Det här var ögonblicket som satte sig. Giacomo gjorde:
+
+```bash
+kubectl edit role read-pods
+```
+
+Lade till `services` i `resources`. Direkt därefter kunde pod-reader lista services — utan att binda om något, utan att starta om något. K8s cachar inte behörighet. När han sen tog bort `pods` från samma roll fick samma SA `forbidden` på pods omedelbart.
+
+Det är hela poängen med att separera identitet (SA) från behörighet (Role) via en Binding: du ändrar bara rollen, allt annat lever vidare.
 
 # Hands-on
 
@@ -185,7 +316,75 @@ Förväntat: `yes` för list, `no` för delete.
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+## 1. Inspektera kubeconfig utan att läcka token
+
+```bash
+kubectl config view
+```
+
+Förväntat: clusters, users, contexts och current-context listas. Token/cert-fält är redactade. Använd ALDRIG `cat ~/.kube/config` — då hamnar token i klartext i terminalen.
+
+## 2. Vem är jag just nu?
+
+```bash
+kubectl auth whoami
+```
+
+Förväntat: visar din identitet (user + groups) som API-servern ser dig.
+
+## 3. Får jag göra X?
+
+```bash
+kubectl auth can-i create pods
+kubectl auth can-i delete nodes
+kubectl auth can-i get secrets -n kube-system
+```
+
+Förväntat: `yes` eller `no` per kommando, baserat på din RBAC.
+
+## 4. Lista allt jag får göra
+
+```bash
+kubectl auth can-i --list
+```
+
+Förväntat: full dump av varje resurs + verb du har access till. Bra första kommando på ny kubeconfig.
+
+## 5. Är jag cluster-admin?
+
+```bash
+kubectl auth can-i '*' '*'
+```
+
+Förväntat: `no` för vanlig SA. `yes` bara om kubeconfig är admin-cert. Får du `yes` på prod — röd flagga.
+
+## 6. Generera kortlivad token mot service account
+
+```bash
+kubectl create token pod-reader -n doe25-gg --duration=30m
+```
+
+Förväntat: en JWT skrivs ut. Klistra in den i `users:` i kubeconfig. Username spelar ingen roll — token identifierar.
+
+## 7. Editera en Role live och se effekten direkt
+
+```bash
+kubectl edit role read-pods -n doe25-gg
+# lägg till "services" i resources, spara
+kubectl auth can-i list services -n doe25-gg --as=system:serviceaccount:doe25-gg:pod-reader
+```
+
+Förväntat: `yes` direkt efter save. Ingen ombindning, ingen restart. K8s cachar inte behörighet.
+
+## 8. Ta bort en resurs från Role och bekräfta blockering
+
+```bash
+kubectl edit role read-pods -n doe25-gg
+# ta bort "pods" från resources
+kubectl auth can-i list pods -n doe25-gg --as=system:serviceaccount:doe25-gg:pod-reader
+```
+
+Förväntat: `no` omedelbart. Forbidden vid riktiga anrop.
 
 # Flashcards
 
