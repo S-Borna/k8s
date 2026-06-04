@@ -18,6 +18,8 @@ const mockExamFile = import.meta.glob("/content-source/mock-exam.md", {
   eager: true,
 }) as Record<string, string>;
 
+const SKIPPED_CHAPTERS = new Set<number>([9, 16, 17]);
+
 export const chapters: Chapter[] = buildChapters();
 export const mockExamQuestions: MockExamQuestion[] = buildMockExam();
 
@@ -27,6 +29,7 @@ function buildChapters(): Chapter[] {
   for (const [path, raw] of Object.entries(chapterFiles)) {
     const parsed = parseChapterMarkdown(raw);
     const id = readNumberFrontmatter(parsed.frontmatter, "id", path);
+    if (SKIPPED_CHAPTERS.has(id)) continue;
     const title = readStringFrontmatter(parsed.frontmatter, "title");
     const titleSv = readStringFrontmatter(parsed.frontmatter, "titleSv");
     const estimatedMinutes = readNumberFrontmatter(
@@ -57,10 +60,10 @@ function buildChapters(): Chapter[] {
     });
   }
 
-  for (let i = 0; i <= 17; i++) {
-    if (i === 9 && !result.some((c) => c.id === 9)) {
+  for (const id of SKIPPED_CHAPTERS) {
+    if (!result.some((c) => c.id === id)) {
       result.push({
-        id: 9,
+        id,
         title: "Skipped",
         titleSv: "Hoppas över",
         estimatedMinutes: 0,
