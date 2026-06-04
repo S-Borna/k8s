@@ -13,6 +13,8 @@ import { MarkdownContent } from "@/components/MarkdownContent";
 import { HandsOnList } from "@/components/HandsOnList";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
 import { ExitQuiz } from "@/components/ExitQuiz";
+import { YamlQuizDeck } from "@/components/YamlQuizDeck";
+import { ScenarioDeck } from "@/components/ScenarioDeck";
 import { ChapterJumper } from "@/components/ChapterJumper";
 import { ChapterPrevNext } from "@/components/ChapterPrevNext";
 import { SANDBOX_LABEL, SANDBOX_URL } from "@/lib/sandbox";
@@ -72,6 +74,13 @@ export default function ChapterPage() {
     { key: "handson", label: "Hands-on", count: chapter.handsOn.length },
     { key: "lecture", label: "Giacomo & lektion" },
   ];
+
+  if (chapter.yamlQuizzes.length > 0) {
+    tabs.push({ key: "yaml", label: "YAML-quiz", count: chapter.yamlQuizzes.length });
+  }
+  if (chapter.scenarios.length > 0) {
+    tabs.push({ key: "scenarios", label: "Scenarios", count: chapter.scenarios.length });
+  }
 
   return (
     <motion.div variants={staggerParent} initial="initial" animate="enter">
@@ -257,6 +266,32 @@ function TabContent({
             <LecturePlaceholder />
           )}
         </div>
+      </motion.section>
+    );
+  }
+
+  if (active === "yaml") {
+    return (
+      <motion.section
+        variants={staggerChild}
+        initial="initial"
+        animate="enter"
+        key="yaml"
+      >
+        <YamlQuizDeck quizzes={chapter.yamlQuizzes} />
+      </motion.section>
+    );
+  }
+
+  if (active === "scenarios") {
+    return (
+      <motion.section
+        variants={staggerChild}
+        initial="initial"
+        animate="enter"
+        key="scenarios"
+      >
+        <ScenarioDeck scenarios={chapter.scenarios} />
       </motion.section>
     );
   }

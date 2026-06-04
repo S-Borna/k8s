@@ -399,3 +399,166 @@ Förväntat: Deployment och alla Pods borta.
 ## Q [workloads, deployments]: Varför sätter man alltid `maxReplicas` på HPA?
 
 **A:** Utan tak kan en DDoS-attack eller bug spinna upp oändliga Pods - enorm faktura och resursutmattning av klustret. `maxReplicas` är en safety brake. Sätt också monitoring/larm när max nås så du vet när skalningen träffar taket.
+
+# YAML-quiz
+
+## 1. Fyll i Deployment-basen
+
+Komplettera Deployment-manifestet. Fyll i apiVersion, kind och rätt fält för antal Pods.
+
+```yaml
+apiVersion: ???
+kind: ???
+metadata:
+  name: hello-deploy
+spec:
+  ???: 10
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-pod
+        image: nigelpoulton/k8sbook:1.0
+```
+
+**Svar:** `apiVersion: apps/v1`, `kind: Deployment`, `replicas: 10`
+
+**Förklaring:** Deployments ligger i API-gruppen `apps/v1` (inte `v1` som Pods). `replicas` styr hur många Pods ReplicaSet ska hålla igång.
+
+## 2. Rolling update-strategi
+
+Du vill ha en snabb deploy utan att tappa kapacitet. Fyll i blanken så att max 1 Pod skapas över desired och inga Pods försvinner under tiden.
+
+```yaml
+spec:
+  replicas: 20
+  strategy:
+    type: ???
+    rollingUpdate:
+      maxSurge: ???
+      maxUnavailable: ???
+```
+
+**Svar:** `type: RollingUpdate`, `maxSurge: 1`, `maxUnavailable: 0`
+
+**Förklaring:** `RollingUpdate` är default-strategin. `maxSurge: 1` tillåter en extra Pod över desired, och `maxUnavailable: 0` betyder att kapaciteten aldrig sjunker under rolloutet.
+
+## 3. Hitta felet — selector mismatch
+
+Manifestet applyas men Deploymenten skapar inga Pods. Vad är fel?
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+```
+
+**Svar:** `selector.matchLabels` (`app: web`) matchar inte `template.metadata.labels` (`app: nginx`). Ändra båda till samma värde, t.ex. `app: web`.
+
+**Förklaring:** Selector är limmet mellan Deployment, ReplicaSet och Pods. De måste matcha exakt, annars hittar Deployment inga Pods att äga. Selector går inte att ändra efter skapande — du måste delete och skapa om.
+
+# Scenarios
+
+## 1. Rollouten fastnar — Pods är Running men inte Ready
+
+**Situation:** Du körde `kubectl set image deployment/web nginx=nginx:1.26` och sen `kubectl rollout status`. Det timear ut. `kubectl get pods` visar nya Pods som `Running` men `0/1 READY`. Gamla Pods kör fortfarande och appen svarar.
+
+**Frågor:**
+- Vad är troligaste orsaken?
+- Hur diagnostiserar du vidare?
+- Hur fixar du utan downtime?
+
+**Modellsvar:** **Orsak:** Readiness probe failar på de nya Pods. Typiskt fel port, fel path eller appen tar längre tid att starta än `initialDelaySeconds`.
+
+**Diagnos:**
+
+```bash
+kubectl describe pod <ny-pod>     # kolla Events och Readiness-rader
+kubectl logs <ny-pod>             # ser appen ens HTTP-requesten?
+```
+
+Leta efter `Readiness probe failed: HTTP probe failed with statuscode` eller `connection refused`.
+
+**Fix:** Eftersom gamla Pods aldrig togs ner är det noll downtime. Kör:
+
+```bash
+kubectl rollout undo deployment/web
+```
+
+Sen rätta probe-porten/pathen i YAMLn och apply igen. Precis det Giacomo visade på lektionen.
+
+## 2. HPA skalar inte upp trots hög last
+
+**Situation:** Du har en HPA som ska skala mellan 2 och 10 Pods vid 50% CPU. Du kör load mot servicen, CPU på containrarna ligger uppenbart över 80%, men `kubectl get hpa` visar `TARGETS   <unknown>/50%` och replikorna ligger kvar på 2.
+
+**Frågor:**
+- Vad är troligaste orsaken?
+- Vilka två saker måste finnas på plats för att HPA ska kunna räkna?
+
+**Modellsvar:** **Orsak:** `<unknown>` betyder att HPA inte får några metrics. Antingen saknas **metrics-server** i klustret, eller så har Deploymenten inga **`resources.requests`** definierat.
+
+**Diagnos:**
+
+```bash
+kubectl top pods                  # om detta failar → metrics-server saknas
+kubectl get deployment web -o yaml | grep -A 3 resources
+```
+
+**Fix:**
+
+1. Installera metrics-server om `kubectl top pods` failar.
+2. Lägg till `resources.requests.cpu` på containern i Deploymenten:
+
+```yaml
+resources:
+  requests:
+    cpu: 100m
+```
+
+HPA jämför aktuell CPU mot `requests`. Utan requests vet den inte vad 50% betyder.
+
+## 3. Fel version i prod — snabb rollback
+
+**Situation:** Du deployade `app:2.0` till prod för 10 minuter sen. Slack lyser rött — användare får 500-fel. Du behöver tillbaka till `1.0` NU. `kubectl rollout history deployment/checkout` visar revision 1, 2 och 3.
+
+**Frågor:**
+- Vilket kommando kör du för att rolla tillbaka till version 1.0?
+- Vad behöver du tänka på efter rollbacken?
+
+**Modellsvar:** **Diagnos:** Kolla först vilken revision som var 1.0:
+
+```bash
+kubectl rollout history deployment/checkout --revision=2
+```
+
+Antag att revision 2 är 1.0.
+
+**Fix:**
+
+```bash
+kubectl rollout undo deployment/checkout --to-revision=2
+kubectl rollout status deployment/checkout
+```
+
+Gamla ReplicaSet vinds upp, nya vinds ner. Noll downtime.
+
+**Viktigt efter:** `rollout undo` är **imperativt** — YAMLn i Git är fortfarande `2.0`. Nästa person som kör `kubectl apply -f deploy.yml` deployar tillbaka det trasiga. Uppdatera YAML-filen till `1.0` direkt och pusha. Sätt också `change-cause` annotation så historiken blir tydlig.

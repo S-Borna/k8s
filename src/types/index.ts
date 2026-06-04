@@ -13,6 +13,27 @@ export type HandsOnStep = {
   body: string;
 };
 
+export type YamlQuiz = {
+  id: string;
+  chapterId: number;
+  number: number;
+  title: string;
+  description: string;
+  yaml: string;
+  answer: string;
+  explanation: string;
+};
+
+export type Scenario = {
+  id: string;
+  chapterId: number;
+  number: number;
+  title: string;
+  situation: string;
+  questions: string[];
+  modelAnswer: string;
+};
+
 export type Chapter = {
   id: number;
   title: string;
@@ -24,6 +45,8 @@ export type Chapter = {
   handsOn: HandsOnStep[];
   lectureHandsOn: HandsOnStep[];
   flashcards: Flashcard[];
+  yamlQuizzes: YamlQuiz[];
+  scenarios: Scenario[];
   skipped?: boolean;
 };
 

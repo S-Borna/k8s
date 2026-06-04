@@ -4,6 +4,8 @@ import {
   parseFlashcards,
   parseHandsOnSteps,
   parseMockExam,
+  parseScenarios,
+  parseYamlQuizzes,
 } from "@/lib/markdown";
 
 const chapterFiles = import.meta.glob("/content-source/chapters/*.md", {
@@ -57,6 +59,8 @@ function buildChapters(): Chapter[] {
         "lstep",
       ),
       flashcards: parseFlashcards(parsed.sections["Flashcards"] ?? "", id),
+      yamlQuizzes: parseYamlQuizzes(parsed.sections["YAML-quiz"] ?? "", id),
+      scenarios: parseScenarios(parsed.sections["Scenarios"] ?? "", id),
     });
   }
 
@@ -73,6 +77,8 @@ function buildChapters(): Chapter[] {
         handsOn: [],
         lectureHandsOn: [],
         flashcards: [],
+        yamlQuizzes: [],
+        scenarios: [],
         skipped: true,
       });
     }

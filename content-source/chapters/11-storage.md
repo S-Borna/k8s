@@ -135,3 +135,147 @@ _Ingen dedikerad lektion på detta kapitel — se Hands-on ovan._
 ## Q [storage]: Var sker faktiskt mountning av en volym?
 
 **A:** Kubelet på noden där Pod schemaläggs. Kubelet anropar CSI-drivaren för att attachera och mounta volymen. Sedan görs den tillgänglig till containern via volumeMount. Detta är osynligt för apputvecklaren - K8s sköter hela kedjan.
+
+# YAML-quiz
+
+## 1. Fyll i PVC-specen
+
+Du behover 5 GB storage som bara en nod ska kunna skriva till. Fyll i de tva blanken.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-pvc
+spec:
+  accessModes:
+    - ???
+  resources:
+    requests:
+      storage: ???
+```
+
+**Svar:** `ReadWriteOnce` och `5Gi`
+
+**Förklaring:** RWO racker nar bara en nod ska skriva. Storlek skrivs som `5Gi` (Gibibyte), inte `5GB`. K8s matchar PVC mot en PV som har minst 5Gi och stoder RWO.
+
+## 2. Hitta felet i Pod-volymen
+
+Pod ska anvanda PVC `my-pvc` men startar inte. Vad ar fel i YAMLn?
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app
+spec:
+  containers:
+  - name: app
+    image: nginx
+    volumeMounts:
+    - mountPath: /data
+      name: storage
+  volumes:
+  - name: storage
+    pvc:
+      claimName: my-pvc
+```
+
+**Svar:** Faltet ska heta `persistentVolumeClaim:`, inte `pvc:`.
+
+**Förklaring:** K8s kanner inte igen `pvc` som volym-typ. Det fulla namnet `persistentVolumeClaim` kravs. Annars kraschar Pod med valideringsfel fran API-servern.
+
+## 3. Fyll i StorageClass-referensen
+
+Du vill att din PVC ska provisionera en snabb SSD via StorageClass `fast-ssd`. Fyll i blanket.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-pvc
+spec:
+  ???: fast-ssd
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+```
+
+**Svar:** `storageClassName`
+
+**Förklaring:** Faltet heter `storageClassName` och pekar pa namnet i `kubectl get storageclass`. K8s anvander den klassens provisioner for att skapa en PV automatiskt.
+
+# Scenarios
+
+## 1. PVC fastnar i Pending
+
+**Situation:** Du applyar en PVC med `storage: 10Gi` och `accessModes: [ReadWriteMany]`. Efter en stund kor du `kubectl get pvc` och ser:
+
+```
+NAME     STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS
+my-pvc   Pending                                      standard
+```
+
+Podden som ska anvanda PVC:n startar inte och fastnar i `ContainerCreating`.
+
+**Frågor:**
+- Vad ar troligaste orsaken till att PVC:n star i Pending?
+- Vilket kommando ger dig mer detaljer?
+- Hur fixar du det?
+
+**Modellsvar:** **Orsak:** Default StorageClass (`standard`) ar oftast block storage (typ EBS) och stoder bara RWO. Du bad om RWX vilket kraver shared filesystem som NFS eller CephFS. Ingen PV kan matcha begaran.
+
+**Diagnos:**
+```bash
+kubectl describe pvc my-pvc
+```
+Du ser troligen `failed to provision volume` eller `no volume plugin matched`.
+
+**Fix:** Antingen byt till `ReadWriteOnce` om bara en Pod behover skriva, eller anvand en StorageClass som stoder RWX (t.ex. en NFS- eller EFS-baserad provisioner). Andra accessModes i PVC:n och re-applya.
+
+## 2. Data forsvann efter PVC-radering
+
+**Situation:** Du raderade en gammal PVC for att stada upp. Nasta dag inser du att databasens data ar borta. `kubectl get pv` visar att aven PV:n ar borta. StorageClass-specen visar:
+
+```
+reclaimPolicy: Delete
+```
+
+Kunden ringer.
+
+**Frågor:**
+- Vad hande tekniskt?
+- Hur skulle du ha skyddat datan i forvag?
+
+**Modellsvar:** **Vad hande:** Reclaim policy `Delete` betyder att nar PVC:n raderas tas bade PV:n OCH den underliggande storagen (t.ex. EBS-volymen) bort. Default for dynamiska PVs ar Delete. Datan ar borta om du inte har backup.
+
+**Skydd framat:** Anvand `reclaimPolicy: Retain` for viktig data. Da behalls PV:n och disken nar PVC raderas — du maste rensa manuellt. Du kan andra policyn direkt pa en befintlig PV:
+```bash
+kubectl patch pv <pv-namn> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+```
+Kombinera med backuper. Retain skyddar mot misstag, inte mot disk-fel.
+
+## 3. Pod stuck i ContainerCreating
+
+**Situation:** Du deployar en Pod som mountar en RWO PVC. PVC:n ar `Bound`, men Podden fastnar i `ContainerCreating`. `kubectl describe pod` visar:
+
+```
+MultiAttachError: Volume is already exclusively attached to one node and can't be attached to another
+```
+
+**Frågor:**
+- Vad ar orsaken?
+- Hur fixar du?
+
+**Modellsvar:** **Orsak:** RWO betyder att volymen kan attacheras till bara EN nod at gangen. En tidigare Pod (eller en gammal version efter en deploy) sitter fortfarande pa volymen pa en annan nod. Nya Podden hamnade pa fel nod och far inte attachera.
+
+**Diagnos:**
+```bash
+kubectl get pods -o wide --all-namespaces | grep <pvc-namn>
+kubectl get volumeattachment
+```
+Kolla vilken nod den gamla Podden korde pa.
+
+**Fix:** Radera den gamla Podden sa volymen detacheras. Om det ar en Deployment kan du behova satta `strategy: Recreate` istallet for `RollingUpdate` sa K8s vantar in den gamla Podden innan ny startar. For databaser anvand StatefulSet — den hanterar detta korrekt.

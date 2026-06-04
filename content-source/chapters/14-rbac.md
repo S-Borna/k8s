@@ -427,3 +427,139 @@ Förväntat: `no` omedelbart. Forbidden vid riktiga anrop.
 ## Q [security, rbac]: Vad händer om en Pod inte specifierar serviceAccountName?
 
 **A:** Använder default service account i namespace. Default har minimala permissions - ofta bara basic discovery. Om Podden behöver mer (t.ex. lista Pods, skapa resurser) krävs egen Service Account med specifika RBAC-rules. Default är säker fallback.
+
+# YAML-quiz
+
+## 1. Fyll i: Role for pod-reader
+
+Du ska skapa en Role som later nagon `get`, `list` och `watch` pods i namespace `default`. Fyll i blanken.
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ???
+```
+
+**Svar:** `["get", "list", "watch"]`
+
+**Förklaring:** Verbs ar HTTP-metoderna en subject far kora mot resursen. `get` hamtar en, `list` listar alla, `watch` streamar andringar. Notera: pods har ingen `update` - du raderar och skapar ny istallet.
+
+## 2. Hitta felet: RoleBinding pekar fel
+
+Den har RoleBindingen ska binda Service Account `limited-sa` till rollen `pod-reader`. Vad ar fel?
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods-binding
+  namespace: default
+subjects:
+- kind: User
+  name: limited-sa
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+```
+
+**Svar:** `kind: User` ska vara `kind: ServiceAccount`, och du maste lagga till `namespace: default` under subjects (SA ar namespaced).
+
+**Förklaring:** Subjects kan vara User, Group eller ServiceAccount. Heter saken `limited-sa` och du skapade en SA - da ar `kind: ServiceAccount`. SA:n bor i ett namespace, sa det fattas ocksa. User behover inget namespace (kommer fran cert/token).
+
+## 3. Fyll i: ClusterRoleBinding for cluster-admin
+
+Du ska binda en User `alice` till den inbyggda ClusterRolen `view` over hela klustret. Fyll i blanken.
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ???
+metadata:
+  name: alice-view
+subjects:
+- kind: User
+  name: alice
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+```
+
+**Svar:** `ClusterRoleBinding`
+
+**Förklaring:** Ska behorigheten galla cluster-wide anvander du ClusterRoleBinding (ej RoleBinding). RoleBinding ar namespaced - even om du binder en ClusterRole, galler den bara i det namespace. ClusterRoleBinding = overallt.
+
+# Scenarios
+
+## 1. Forbidden vid kubectl get pods
+
+**Situation:** Du jobbar med din SA `limited-sa` och korer:
+
+```
+$ kubectl get pods -n default
+Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:default:limited-sa" cannot list resource "pods" in API group "" in the namespace "default"
+```
+
+Du vet att SA:n finns och att kubeconfig pekar ratt.
+
+**Frågor:**
+- Ar detta authN- eller authZ-fel?
+- Hur diagnostiserar du vad SA:n faktiskt far gora?
+- Hur fixar du sa att SA:n far lista pods?
+
+**Modellsvar:** **Orsak:** `Forbidden` = authZ-fel. Du ar inloggad (annars hade du fatt `Unauthorized`), men RBAC saknar regel som later SA:n lista pods.
+
+**Diagnos:** Kor `kubectl auth can-i list pods -n default --as=system:serviceaccount:default:limited-sa`. Svar: `no`. Lista allt SA:n far: `kubectl auth can-i --list --as=system:serviceaccount:default:limited-sa`.
+
+**Fix:** Skapa en Role med `verbs: ["get", "list", "watch"]` pa `pods`, och en RoleBinding som binder Role till SA:n. Spara, applicera. Ingen restart behovs - K8s cachar inte behorighet, nya regeln galler direkt.
+
+## 2. Unauthorized efter kubeconfig-byte
+
+**Situation:** Du fick en ny kubeconfig av handledaren och korer:
+
+```
+$ kubectl get nodes
+error: You must be logged in to the server (Unauthorized)
+```
+
+Kubeconfig ser ratt ut i `kubectl config view`.
+
+**Frågor:**
+- Ar detta authN- eller authZ-fel?
+- Vad ar troligaste orsaken?
+- Hur loser du det?
+
+**Modellsvar:** **Orsak:** `Unauthorized` = authN-fel. API-servern accepterar inte din identitet alls - token utgangen, fel cert, eller ingen credential alls.
+
+**Diagnos:** `kubectl config view` visar struktur men inte token-innehall (redactat). Vanligast: token har TTL och har gatt ut. Kolla med `kubectl auth whoami` - failar ocksa med Unauthorized.
+
+**Fix:** Generera ny token mot SA:n: `kubectl create token <sa-name> -n <ns> --duration=30m`. Byt ut token-faltet i kubeconfig. Username-faltet rors inte - det ar bara en etikett, det ar token som identifierar.
+
+## 3. Pod kan inte lista andra pods
+
+**Situation:** Du deployar en app som ska lista pods i sitt namespace via Kubernetes API. I container-loggarna ser du:
+
+```
+Error: pods is forbidden: User "system:serviceaccount:doe25-gg:default" cannot list resource "pods"
+```
+
+Din Pod-spec har ingen `serviceAccountName` satt.
+
+**Frågor:**
+- Vilken SA korr Podden som?
+- Varfor blir det Forbidden?
+- Hur fixar du det korrekt (least privilege)?
+
+**Modellsvar:** **Orsak:** Saknar du `serviceAccountName` faller Podden tillbaka pa `default` SA i namespace. Default har nasta inga rattigheter - bara basic discovery. Den far inte lista pods.
+
+**Diagnos:** Bekrafta med `kubectl auth can-i list pods -n doe25-gg --as=system:serviceaccount:doe25-gg:default` - far `no`.
+
+**Fix:** Skapa egen SA: `kubectl create serviceaccount my-app -n doe25-gg`. Lagg `serviceAccountName: my-app` i Pod-spec. Skapa Role med `verbs: ["list"]` pa `pods` och en RoleBinding mellan Role och SA. Best practice: egen SA per Pod, inte default - latt att se vem som gor vad och latt att aterkalla.

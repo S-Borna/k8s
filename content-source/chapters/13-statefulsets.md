@@ -437,3 +437,140 @@ Förväntat: En podd per nod i klustret. Inga `replicas`-inställningar behövs 
 ## Q [workloads, storage]: Vad är skillnaden i DNS mellan Deployment och StatefulSet?
 
 **A:** Deployment + Service: `service-name.namespace.svc.cluster.local` → load-balancerar till en av Pods. StatefulSet + headless Service: `pod-name.service-name.namespace.svc.cluster.local` → specifik Pod direkt. Behövs när klienten måste nå en bestämd instans (master vs replica).
+
+# YAML-quiz
+
+## 1. Headless Service for StatefulSet
+
+Du ska gora en Service headless sa varje podd far egen DNS istallet for load-balancing. Fyll i det som saknas.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  clusterIP: ???
+  selector:
+    app: mongo
+  ports:
+  - port: 27017
+```
+
+**Svar:** `None`
+
+**Förklaring:** `clusterIP: None` gor Servicen headless. Da far du DNS per podd (`mongodb-0.mongo`) istallet for en ClusterIP som lastbalanserar. Kravs nar du vill prata med en specifik podd, t.ex. master-noden i ett databaskluster.
+
+## 2. volumeClaimTemplates
+
+Du vill att varje podd i StatefulSeten ska fa egen PVC pa 5Gi automatiskt. Fyll i det som saknas.
+
+```yaml
+spec:
+  serviceName: web
+  replicas: 3
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["???"]
+      resources:
+        requests:
+          storage: ???
+```
+
+**Svar:** `ReadWriteOnce` och `5Gi`
+
+**Förklaring:** `volumeClaimTemplates` ar en mall som skapar en egen PVC per podd. Med 3 replicas far du `data-web-0`, `data-web-1`, `data-web-2`. `ReadWriteOnce` ar default for StatefulSet eftersom varje podd ska ha sin egen storage.
+
+## 3. Hitta felet i StatefulSeten
+
+Den har YAMLn deployar men poddarna far inte stabil DNS. Vad ar fel?
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+```
+
+**Svar:** `serviceName` saknas. Du maste ange `serviceName: web` under `spec:` och ha en headless Service med samma namn.
+
+**Förklaring:** Utan `serviceName` vet StatefulSeten inte vilken Service den hor till, sa DNS per podd fungerar inte. Du behover ocksa en separat headless Service (`clusterIP: None`) med matchande namn for att `web-0.web` ska resolva.
+
+# Scenarios
+
+## 1. Podden kommer inte upp efter delete
+
+**Situation:** Du raderar `tkbsts-1` med `kubectl delete pod tkbsts-1` for att testa. Ny podd skapas men fastnar i `Pending`. `kubectl describe pod tkbsts-1` visar event: `0/3 nodes available: 1 node(s) had volume node affinity conflict`.
+
+**Frågor:**
+- Vad ar troligaste orsaken?
+- Hur diagnostiserar du vidare?
+- Hur fixar du?
+
+**Modellsvar:** **Orsak:** PVC:n `data-tkbsts-1` ar bunden till en specifik nod (ReadWriteOnce). Den nya podden schemalades pa en annan nod an dar PVC:n ligger. ReadWriteOnce-PVC kan bara mountas av poddar pa samma nod.
+
+**Diagnos:**
+```bash
+kubectl get pvc data-tkbsts-1 -o yaml | grep -i node
+kubectl get pv <pv-namnet> -o yaml | grep -A5 nodeAffinity
+```
+Kolla vilken nod PVC:n ar bunden till och jamfor med var podden hamnade.
+
+**Fix:** Lat schedulern hitta ratt nod sjalv. Oftast loser det sig genom att vanta — K8s ska schemalagga podden dar volymen finns. Om inte: kolla att noden ar Ready (`kubectl get nodes`). Vid storre problem behover du flytta PVC:n eller anvanda en storage class som stoder ReadWriteMany.
+
+## 2. PVC:erna ligger kvar efter delete
+
+**Situation:** Du raderade hela StatefulSeten med `kubectl delete statefulset tkbsts`. Nu ska du deploya en helt ny app pa samma namespace, men `kubectl get pvc` visar fortfarande tre PVC:er: `data-tkbsts-0`, `data-tkbsts-1`, `data-tkbsts-2`. Storage class har slut pa utrymme.
+
+**Frågor:**
+- Varfor finns PVC:erna kvar?
+- Hur tar du bort dem sakert?
+
+**Modellsvar:** **Orsak:** PVC:er raderas inte automatiskt nar du tar bort en StatefulSet. Det ar ett medvetet skydd mot dataforlust — om du av misstag raderar StatefulSeten kan du deploya om och fa tillbaka all data.
+
+**Diagnos:**
+```bash
+kubectl get pvc
+kubectl get pvc -l app=tkbsts
+```
+Verifiera att det ar ratt PVC:er och att du verkligen inte behover datat.
+
+**Fix:** Nar du ar saker:
+```bash
+kubectl delete pvc -l app=tkbsts
+```
+Eller en i taget med namn. Gor detta bara nar du vet att datat far ga forlorat — det finns ingen vag tillbaka.
+
+## 3. Skalning fastnar pa web-1
+
+**Situation:** Du skalade upp StatefulSeten fran 1 till 3 replicas. `kubectl get pods -w` visar `web-0` Running, `web-1` stuck i `ContainerCreating`, och `web-2` har inte ens skapats. Det har stat sa i 5 minuter.
+
+**Frågor:**
+- Vad ar troligaste orsaken till att `web-2` inte startat?
+- Hur diagnostiserar du `web-1`?
+
+**Modellsvar:** **Orsak:** StatefulSets skalar sekventiellt — `web-2` startar inte forran `web-1` ar Ready. Sa lange `web-1` hanger i `ContainerCreating` star hela skalningen still. Detta ar by design och inget fel pa K8s.
+
+**Diagnos:**
+```bash
+kubectl describe pod web-1
+kubectl get events --sort-by='.lastTimestamp' | grep web-1
+```
+Kolla Events-sektionen. Vanliga orsaker: PVC kan inte bindas (ingen storage tillganglig), image pull-fel, eller volume mount-fel.
+
+**Fix:** Beror pa root cause. Om det ar PVC-problem: kolla `kubectl get pvc data-web-1` — ar den `Pending`? Kolla storage class. Om det ar image-problem: verifiera imagenamn och credentials. Tills `web-1` blir Ready kommer `web-2` aldrig att starta.

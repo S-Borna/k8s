@@ -515,3 +515,141 @@ Förväntat: när MR stängs/mergas körs stop-jobbet och hela miljön rivs ner.
 ## Q [config, security]: Vad är `envFrom`?
 
 **A:** Mappar ALLA nycklar i en ConfigMap eller Secret till env vars i Podden, utan att lista varje nyckel manuellt. Smidigt för många config-nycklar. Risk: alla nycklar exponeras, vilket kan vara oavsiktligt om ConfigMap har känslig data.
+
+# YAML-quiz
+
+## 1. Fyll i: Anvand ConfigMap-nyckel som env var
+
+Du vill att containern far env-varen `LOG_LEVEL` med vardet fran ConfigMappen `app-config` (nyckel `log-level`). Fyll i de tre `???`.
+
+```yaml
+env:
+- name: LOG_LEVEL
+  valueFrom:
+    ???:
+      name: ???
+      key: ???
+```
+
+**Svar:** `configMapKeyRef`, `app-config`, `log-level`
+
+**Förklaring:** `configMapKeyRef` pekar pa en ConfigMap, `name` ar ConfigMappens namn och `key` ar nyckeln inne i dess `data`-block. For en Secret skulle du anvant `secretKeyRef` istallet.
+
+## 2. Hitta felet: Secret med klartextvarden
+
+Den har Secret-manifestfilen funkar inte som forvantat. Vad ar fel?
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+type: Opaque
+data:
+  username: user
+  password: password
+```
+
+**Svar:** Vardena under `data:` maste vara base64-kodade. Skriv `echo -n 'user' | base64` → `dXNlcg==` och `echo -n 'password' | base64` → `cGFzc3dvcmQ=`. Alternativt anvand falten under `stringData:` dar K8s base64-kodar at dig.
+
+**Förklaring:** Falten under `data:` kraver base64. Apply gar igenom men appen far skrap-varden nar de avkodas. `stringData:` ar bekvamare nar du skriver manifest for hand.
+
+## 3. Fyll i: Mounta ConfigMap som filer
+
+Du vill mounta ConfigMappen `app-config` som filer under `/etc/config` i containern. Fyll i de tre `???`.
+
+```yaml
+volumeMounts:
+- name: config-vol
+  mountPath: ???
+volumes:
+- name: config-vol
+  ???:
+    name: ???
+```
+
+**Svar:** `/etc/config`, `configMap`, `app-config`
+
+**Förklaring:** Volume-typen `configMap` skapar en fil per nyckel i ConfigMappen — nyckelnamnet blir filnamnet, vardet blir filinnehallet. Mountas filerna sa uppdateras de automatiskt nar ConfigMappen andras (kan ta upp till en minut), till skillnad fran env vars.
+
+# Scenarios
+
+## 1. ImagePullBackOff efter forsta deploy
+
+**Situation:** Du har precis appliccerat ditt deployment-manifest i ditt nya namespace. Podden startar inte och `kubectl get pods` visar status `ImagePullBackOff`. Du kor `kubectl describe pod <namn>` och ser i Events-sektionen:
+
+```
+Failed to authorize: failed to fetch anonymous token, status: 403 Forbidden
+```
+
+Imagen ligger i `registry.chas.lab.dev/gg/testrest`.
+
+**Frågor:**
+- Vad ar troligaste orsaken?
+- Hur fixar du det?
+- Vad maste du komma ihag om du senare deployar i ett annat namespace?
+
+**Modellsvar:** **Orsak:** Klustret kan inte autentisera mot er privata GitLab-registry. 403 betyder att den forsoker pulla anonymt och nekas. Du saknar en imagePullSecret i namespacet.
+
+**Diagnos:** `kubectl describe pod <namn>` (du har redan kort den) bekraftar att felet ar auth mot registryt, inte natverk eller fel image-tag.
+
+**Fix:** Skapa en docker-registry-secret med en GitLab access-token som har scope `read_registry`:
+
+```bash
+kubectl create secret docker-registry gitlab-registry-secret \
+  --docker-server=registry.chas.lab.dev \
+  --docker-username=gg \
+  --docker-password=<token>
+```
+
+Lagg sen `imagePullSecrets` i deploymentet:
+
+```yaml
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: gitlab-registry-secret
+```
+
+**Heads-up:** ImagePullSecret ar namespace-scopat, inte cluster-scopat. Varje nytt namespace som ska pulla privata images behover sin egen kopia av secreten.
+
+## 2. Andring i ConfigMap visas inte i appen
+
+**Situation:** Du har uppdaterat `log-level` fran `info` till `debug` i din ConfigMap och kort `kubectl apply -f config-map.yml`. `kubectl get configmap app-config -o yaml` visar `log-level: debug`. Men i app-loggarna fortsatter du se bara info-niva. Appen laser `LOG_LEVEL` som env var fran ConfigMappen.
+
+**Frågor:**
+- Varfor ser appen fortfarande gamla vardet?
+- Hur fixar du det snabbast?
+- Hur skulle du designat for att slippa det har problemet?
+
+**Modellsvar:** **Orsak:** Env vars satts en gang nar Podden startar. De uppdateras INTE nar ConfigMappen andras — det ar en Linux-begransning, inte ett K8s-val. Din uppdaterade ConfigMap finns i klustret, men den korande processen sitter kvar med gamla vardet.
+
+**Diagnos:** `kubectl exec <pod> -- env | grep LOG_LEVEL` visar fortfarande `info`. Bekraftar att Podden inte sett uppdateringen.
+
+**Fix:** Starta om Podden — enklast med `kubectl rollout restart deployment <namn>`. Den skapar nya Pods som plockar upp nya ConfigMap-vardet.
+
+**Battre design:** Mounta ConfigMappen som volym istallet. Mountade filer uppdateras automatiskt (kan ta upp till en minut). Men appen maste sjalv lasa om filen — env vars vs filer ar en avvagning mellan enkelhet och live-reload.
+
+## 3. Basic auth fungerar inte efter apply
+
+**Situation:** Du har skapat en Secret med htpasswd-output for Traefik basic auth och appliccerat den. Nar du kor `curl -u devops:chas123 https://<host>/` far du fortfarande 401 Unauthorized, fastan losenordet stammer. Du kor `kubectl get secret testrest-basic-auth -o yaml` och avkodar `users`-vardet med `base64 -d` — det ser konstigt ut, hash-strangen ar avhuggen och saknar delar som skulle borjat med `$apr1$`.
+
+**Frågor:**
+- Vad ar troligaste orsaken?
+- Hur fixar du det?
+
+**Modellsvar:** **Orsak:** Du skapade secreten utan enkelfnuttar runt htpasswd-strangen. Shellet evaluerade `$apr1`, `$....` osv som variabler — de var tomma — och du fick en trasig hash sparad i secreten.
+
+**Diagnos:** Du har redan sett att den avkodade strangen ar avhuggen. Det bekraftar shell-expansion. Kor om kommandot i ditt eget shell utan apply for att se vad shellet faktiskt expanderar till.
+
+**Fix:** Anvand enkelfnuttar runt hela strangen sa shellet later dollar-tecknen vara:
+
+```bash
+kubectl create secret generic testrest-basic-auth \
+  --from-literal=users='devops:$apr1$....$....' \
+  --dry-run=client -o yaml > secret.yml
+kubectl apply -f secret.yml
+```
+
+Verifiera efterat med `kubectl get secret testrest-basic-auth -o jsonpath='{.data.users}' | base64 -d` — hela strangen ska finnas dar.

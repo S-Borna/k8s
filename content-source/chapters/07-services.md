@@ -371,3 +371,156 @@ kubectl delete pod client
 ## Q [networking, services]: Varför hicker Service vid nedskalning?
 
 **A:** När en Pod tas ner kan en pågående request routas till den terminerande Podden innan EndpointSlice hunnit uppdateras. Klienten får en error. I produktion löses detta med graceful shutdown - preStop hooks + tid för Podden att avsluta pågående requests innan SIGTERM. Det är därför `terminationGracePeriodSeconds` finns.
+
+# YAML-quiz
+
+## 1. ClusterIP Service med selector
+
+Fyll i de saknade fälten så att Servicen exponerar Pods med label `app: web` på port 80 och skickar trafiken till containerns port 8080.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: ???
+  selector:
+    app: ???
+  ports:
+  - port: 80
+    targetPort: ???
+```
+
+**Svar:** `type: ClusterIP`, `app: web`, `targetPort: 8080`. ClusterIP är default-typen och funkar internt i klustret. Selector matchar Pods med `app: web`, och `targetPort` ska peka på porten containern lyssnar på.
+
+**Förklaring:** `port` är porten Servicen själv lyssnar på, `targetPort` är porten i containern. Selector matchar labels på Pods — fel label = tom EndpointSlice = trasig service.
+
+## 2. NodePort med fast port
+
+Du vill exponera Servicen externt via en specifik port på varje nod. Fyll i typen och nodePort så det funkar.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  type: ???
+  selector:
+    app: api
+  ports:
+  - port: 8080
+    targetPort: 9000
+    nodePort: ???
+```
+
+**Svar:** `type: NodePort` och `nodePort` måste vara i intervallet `30000-32767` (t.ex. `30050`). Lägre portar tillåts inte för NodePort.
+
+**Förklaring:** NodePort öppnar en port på VARJE nod. Intervallet 30000-32767 är K8s default-range. Om du utelämnar `nodePort` slumpar K8s en åt dig.
+
+## 3. Hitta felet — selector matchar inte
+
+Servicen ger `connection refused` trots att alla Pods är `Running`. Vad är fel i YAMLen?
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+        version: v1
+    spec:
+      containers:
+      - name: web
+        image: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-svc
+spec:
+  selector:
+    app: web
+    version: v2
+  ports:
+  - port: 80
+    targetPort: 80
+```
+
+**Svar:** Service-selectorn har `version: v2` men Pods har `version: v1`. Selector måste matcha ALLA labels — annars är EndpointSlice tomt. Fix: ändra till `version: v1` eller ta bort version-raden ur selectorn.
+
+**Förklaring:** En Service routar bara trafik till Pods där alla selector-labels matchar. Verifiera med `kubectl describe svc web-svc` — om `Endpoints: <none>` är selectorn fel.
+
+# Scenarios
+
+## 1. Tom EndpointSlice efter deploy
+
+**Situation:** Du har deployat en ny app. Pods är `Running` och Deployments visar 3/3 ready. Men när du kör `curl web-service` från en test-pod får du `connection refused`. `kubectl describe svc web-service` visar `Endpoints: <none>`.
+
+**Frågor:**
+- Vad är troligaste orsaken?
+- Vilket kommando använder du för att bekräfta?
+- Hur fixar du?
+
+**Modellsvar:** **Orsak:** Service-selectorn matchar inga Pods. Vanligaste felet: typo i label eller fel label-key. EndpointSlice är tom = ingen trafik routas.
+
+**Diagnos:**
+
+1. Kolla Service-selectorn: `kubectl get svc web-service -o yaml | grep -A3 selector`
+2. Kolla Pod-labels: `kubectl get pods --show-labels`
+3. Jämför — matchar alla labels exakt?
+
+**Fix:** Patcha Servicen så selector matchar Pod-labels:
+
+```bash
+kubectl patch service web-service -p '{"spec":{"selector":{"app":"web"}}}'
+```
+
+Kör `kubectl describe svc web-service` igen — `Endpoints:` ska nu lista Pod-IP:ar.
+
+## 2. LoadBalancer fastnar på pending
+
+**Situation:** Du kör `kubectl expose deployment web --type=LoadBalancer --port=80`. Service skapas men `kubectl get svc web` visar `EXTERNAL-IP   <pending>` och det rör sig inte på flera minuter. Andra LoadBalancer-services i klustret har redan externa IP:ar.
+
+**Frågor:**
+- Vad är troligaste orsaken i labb-klustret?
+- Hur fixar du tillfälligt?
+
+**Modellsvar:** **Orsak:** Labb-klustret har bara ~4 publika IP:ar (en per nod). När alla är tagna fastnar nya LoadBalancer-services på `<pending>`. Detta är inte ditt fel — det är resursbrist.
+
+**Diagnos:** `kubectl get svc -A | grep LoadBalancer` visar hur många som redan har externa IP:ar.
+
+**Fix (Giacomos regel):** Exponera inte i onödan. Patcha tillbaka till ClusterIP när du testat klart så någon annan får IP:n:
+
+```bash
+kubectl patch service web -p '{"spec":{"type":"ClusterIP"}}'
+```
+
+Kör lokalt eller via NodePort + nod-IP om du behöver extern access utan att vänta.
+
+## 3. Hicka vid nedskalning
+
+**Situation:** Du skalar ner en Deployment från 12 till 2 replikor. Klienten som kört curl-loop mot servicen får några `connection reset` mitt under nedskalningen. Sedan stabiliseras allt igen.
+
+**Frågor:**
+- Vad orsakar hickan?
+- Hur löser man det i produktion?
+
+**Modellsvar:** **Orsak:** När en Pod tas ner kan en pågående request routas till den terminerande Podden INNAN EndpointSlice hunnit uppdateras. Klienten får då en error — Pod stänger ner mitt i requesten.
+
+**Diagnos:** Kolla att det handlar om terminating-pods: `kubectl get pods -w` under nedskalning visar Pods i `Terminating`.
+
+**Fix i produktion:**
+
+1. **preStop hook** — kör en `sleep 10` så Podden stannar i Terminating några sekunder innan SIGTERM. Då hinner EndpointSlice uppdatera.
+2. **terminationGracePeriodSeconds** — sätt tid (default 30s) för Podden att avsluta pågående requests.
+3. **Graceful shutdown i appen** — appen ska sluta ta nya requests men slutföra pågående när SIGTERM kommer.
