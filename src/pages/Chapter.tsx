@@ -12,6 +12,7 @@ import { useActiveTab } from "@/hooks/useActiveTab";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { HandsOnList } from "@/components/HandsOnList";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
+import { ExitQuiz } from "@/components/ExitQuiz";
 import { ChapterJumper } from "@/components/ChapterJumper";
 import { ChapterPrevNext } from "@/components/ChapterPrevNext";
 import { SANDBOX_LABEL, SANDBOX_URL } from "@/lib/sandbox";
@@ -113,6 +114,12 @@ export default function ChapterPage() {
             status: !progress.summaryRead ? "in_progress" : progress.status,
           })
         }
+        onExitQuizPass={() =>
+          updateChapterProgress(chapter.id, {
+            summaryRead: true,
+            status: "completed",
+          })
+        }
         onToggleStep={(stepId) => {
           const next = { ...progress.handsOnSteps, [stepId]: !progress.handsOnSteps[stepId] };
           const allDone =
@@ -143,6 +150,7 @@ type TabContentProps = {
   summaryRead: boolean;
   handsOnSteps: Record<string, boolean>;
   onMarkSummaryRead: () => void;
+  onExitQuizPass: () => void;
   onToggleStep: (stepId: string) => void;
   onResetHandsOn: () => void;
 };
@@ -154,6 +162,7 @@ function TabContent({
   summaryRead,
   handsOnSteps,
   onMarkSummaryRead,
+  onExitQuizPass,
   onToggleStep,
   onResetHandsOn,
 }: TabContentProps) {
@@ -183,6 +192,10 @@ function TabContent({
             {summaryRead ? "Markerat som läst" : "Markera som läst"}
           </motion.button>
         </div>
+
+        {chapter.flashcards.length > 0 && (
+          <ExitQuiz cards={chapter.flashcards} onPass={onExitQuizPass} />
+        )}
       </motion.section>
     );
   }
