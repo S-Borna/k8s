@@ -86,11 +86,145 @@ volumeClaimTemplates:
 
 # Giacomos tillägg
 
-<!-- Fylls i efter lektionen -->
+Giacomo återkom flera gånger till varför StatefulSet finns: det är inte för att göra livet svårare, det är för att vissa appar (databaser, köer, klustrade system) inte fungerar utan stabil identitet och ordning.
+
+> Tentarelevant: Samma poddindex matchar alltid samma PVC. `tkbsts-0` får alltid PVC `data-tkbsts-0`. Om podden dör och återskapas är det fortfarande samma PVC som mountas.
+
+> Tentarelevant: Headless Service har `clusterIP: None`. Den lastbalanserar inte — den returnerar SRV-records för varje podd så klienten kan välja exakt vilken podd den vill prata med.
+
+> Tentarelevant: PVC:er raderas inte automatiskt när StatefulSet raderas. Det är ett medvetet skydd mot dataförlust vid oavsiktlig nedskalning.
+
+Samma image kan köras i både Deployment och StatefulSet — skillnaden ligger inte i appen utan i hur Kubernetes hanterar poddarna. nginx funkar i båda. Postgres i master-replica-setup behöver StatefulSet för identiteten.
+
+Att köra Deployment med en delad PVC funkar illa. ReadWriteOnce gör att bara poddar på samma nod kan mounta. Hamnar poddarna på olika noder får du multi-attach errors. Och även när det fungerar — du vill knappast att alla dina poddar skriver till samma fil samtidigt.
+
+> Viktigt: Skala ner till noll innan du raderar StatefulSeten. Annars dör alla poddar samtidigt utan förutsägbar ordning. För databaskluster är det förödande — noderna hinner inte synka.
+
+> Viktigt: Vid PVC-expansion, ta en nod i taget. Om något går fel mitt i vill du inte ha alla noder trasiga samtidigt.
+
+Om DaemonSets sa Giacomo att det främst är "system-grejor som behöver röra host OS eller hårdvaran" — monitorering, logging, storage-agents, ingress på worker-noder. Inte typiska app-deployments.
+
+Hans avslutande råd: "Håll det som behöver vara stateful som stateful, och allt annat stateless. Stateless ger dig flexibiliteten att skala. I 90 procent av fallen är det bara databaser och köer som faktiskt behöver StatefulSet."
+
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+Giacomo körde hela lektionen kring `tkbsts` — en liten StatefulSet med tre repliker som han hade förberett för att visa hur sekventiell start, stabil identitet och persistent storage faktiskt beter sig live.
+
+## tkbsts-0, tkbsts-1, tkbsts-2
+
+Första demot var att deploya StatefulSeten och titta på `kubectl get pods -w`. Poddarna kom inte upp samtidigt — `tkbsts-0` startade först, blev ready, sedan `tkbsts-1`, sedan `tkbsts-2`. Giacomo poängterade att det här är hela poängen:
+
+> Tentarelevant: StatefulSets skalar upp en i taget. Man väntar tills en podd är ready innan nästa startas. Deployments däremot drar igång allt samtidigt.
+
+Han jämförde med MongoDB och Postgres-kluster där noden som startar först ofta är read-write-mastern och resten är read-only-replikor. Om alla skulle starta samtidigt vet ingen vem som är master.
+
+## born.txt-experimentet
+
+Varje podd hade ett startup-script som skrev sitt hostname till `born.txt` om filen inte redan fanns. Sedan körde Giacomo:
+
+```bash
+kubectl exec tkbsts-0 -- cat /data/born.txt
+kubectl exec tkbsts-1 -- cat /data/born.txt
+kubectl exec tkbsts-2 -- cat /data/born.txt
+```
+
+Var och en svarade med sitt eget poddnamn — `tkbsts-0`, `tkbsts-1`, `tkbsts-2`. Sedan raderade han `tkbsts-1`:
+
+```bash
+kubectl delete pod tkbsts-1
+```
+
+Ny podd kom upp med samma namn. `kubectl exec tkbsts-1 -- cat /data/born.txt` gav fortfarande `tkbsts-1`. Filen hade inte skrivits om eftersom scriptet bara skrev om filen inte fanns — och PVC:n var samma som innan.
+
+Det visar att StatefulSeten kommer ihåg vem podden är — samma PVC, samma data, samma identitet.
+
+## log.txt-experimentet
+
+Samma script skrev också till `log.txt` vid varje start — en ny rad varje gång. Efter ett par `kubectl delete pod tkbsts-0` såg `log.txt` ut så här:
+
+```
+tkbsts-0 started
+tkbsts-0 started
+tkbsts-0 started
+```
+
+Poängen: PVC:n överlever podd-radering. Data finns kvar. Bara appen startar om.
+
+## Headless Service och DNS per podd
+
+Giacomo körde en busybox-podd och nslookup:
+
+```bash
+kubectl run -it --rm test --image=busybox:1.36 -- nslookup dalahan
+```
+
+Resultatet var SRV-records för alla tre poddar, inte en enda ClusterIP. Sedan:
+
+```bash
+nslookup tkbsts-0.dalahan
+```
+
+Det gav IP:n för just `tkbsts-0`. Han förklarade varför detta spelar roll:
+
+> Viktigt: Med en vanlig Service hade alla queries lastbalanserats. Med Headless Service kan du säga "jag vill prata med master-noden, tkbsts-0" och få exakt rätt podd. För databaser är det avgörande — write queries får inte hamna på en replica.
+
+## Access modes på PVC
+
+Giacomo gick igenom de tre vanliga:
+
+- **ReadWriteOnce** — bara poddar från samma nod kan mounta. Vanligast.
+- **ReadWriteOncePod** — bara en enda podd kan mounta, oavsett nod.
+- **ReadWriteMany** — flera poddar kan mounta samtidigt.
+
+Han sa att ReadWriteOnce är default-valet eftersom det är "krångligt nog när två poddar skriver till samma data". ReadWriteMany använder man bara när man verkligen behöver det — exempel han gav var en backup-podd som dumpar data till en PVC som en arkivpodd sedan läser från.
+
+## Expansion av PVC
+
+> Tentarelevant: Vid expansion av PVC ska man göra en nod i taget, inte alla samtidigt. Storage class måste stödja expansion.
+
+Hans logik: om något går fel mitt i expansionen vill man inte att alla noder är trasiga samtidigt. Ta en, verifiera att det funkar, gå vidare.
+
+## Korrekt nedskalning och radering
+
+Det här återkom Giacomo till flera gånger. Om du raderar StatefulSeten direkt försvinner alla poddar samtidigt utan ordning. För ett databaskluster är det dåligt — noder hinner inte synka sin state innan de dör.
+
+Rätt ordning:
+
+```bash
+kubectl scale statefulset tkbsts --replicas=0
+# vänta tills alla är borta
+kubectl delete statefulset tkbsts
+```
+
+> Tentarelevant: Skala ner till noll innan du raderar StatefulSeten. Då går poddarna ner i omvänd ordning (högst index först) och varje hinner stänga av sig snyggt.
+
+PVC:erna försvinner inte automatiskt — det är ett medvetet skydd. Om du verkligen vill bli av med datat:
+
+```bash
+kubectl delete pvc -l app=tkbsts
+```
+
+Annars ligger PVC:erna kvar och nästa gång du deployar StatefulSeten plockar den upp samma data igen.
+
+## DaemonSets
+
+Boken tar inte upp det djupt, men Giacomo körde igenom det snabbt. En DaemonSet (`ds`) deployar en podd per nod. Du sätter inte `replicas` — du får automatiskt en per nod i klustret.
+
+Användningsområden han nämnde:
+- Node exporters för Prometheus
+- Traefik på worker-noder för att ta emot trafik
+- Longhorn för storage
+- Logging-agents
+
+Han jämförde med Docker Swarms "Global Services". Om du lägger till en ny nod i klustret får den automatiskt en kopia av DaemonSetens podd. Med taints kan man begränsa till bara vissa noder.
+
+## Deployment med PVC funkar inte
+
+Giacomo visade också varför man inte bara kan slänga en PVC på en Deployment med flera repliker. Två poddar som försöker mounta samma ReadWriteOnce-PVC ger multi-attach errors om de hamnar på olika noder. Och även om de hamnar på samma nod är det svårt att hantera dynamiskt.
+
+> Viktigt: Backend kan vara en Deployment om den är stateless. Databasen ska vara StatefulSet. Håll det som behöver vara stateful som stateful — resten stateless. Stateless ger mycket mer flexibilitet.
+
 
 # Hands-on
 
@@ -174,7 +308,101 @@ Förväntat: Ny Pod skapas med samma namn `web-0` och får samma PVC `data-web-0
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+## 1. Deploya tkbsts och titta på ordnad start
+
+```bash
+kubectl apply -f tkbsts.yaml
+kubectl get pods -w
+```
+
+Förväntat: `tkbsts-0` startar och blir ready innan `tkbsts-1` ens börjar. Sedan `tkbsts-2`.
+
+## 2. born.txt-experimentet
+
+```bash
+kubectl exec tkbsts-0 -- cat /data/born.txt
+kubectl exec tkbsts-1 -- cat /data/born.txt
+kubectl exec tkbsts-2 -- cat /data/born.txt
+```
+
+Förväntat: Varje podd svarar med sitt eget hostname.
+
+Radera sedan en podd och verifiera att data överlever:
+
+```bash
+kubectl delete pod tkbsts-1
+kubectl get pods -w
+kubectl exec tkbsts-1 -- cat /data/born.txt
+```
+
+Förväntat: Ny `tkbsts-1` kommer upp, plockar samma PVC, och `born.txt` innehåller fortfarande `tkbsts-1` från första starten.
+
+## 3. log.txt-experimentet
+
+```bash
+kubectl exec tkbsts-0 -- cat /data/log.txt
+kubectl delete pod tkbsts-0
+kubectl exec tkbsts-0 -- cat /data/log.txt
+```
+
+Förväntat: En ny rad har lagts till — PVC:n bevarade historiken, scriptet appendade en ny start.
+
+## 4. DNS per podd via Headless Service
+
+```bash
+kubectl run -it --rm test --image=busybox:1.36 -- nslookup dalahan
+```
+
+Förväntat: SRV-records för alla tre poddar, ingen ClusterIP.
+
+```bash
+kubectl run -it --rm test --image=busybox:1.36 -- nslookup tkbsts-0.dalahan
+```
+
+Förväntat: IP-adressen för specifika `tkbsts-0`.
+
+## 5. Expansion av PVC en nod i taget
+
+```bash
+kubectl edit pvc data-tkbsts-0
+# ändra storage till 2Gi, spara
+kubectl get pvc data-tkbsts-0 -w
+```
+
+Förväntat: Statusen visar `Resizing` och sedan tillbaka till `Bound` med den nya storleken. Gör sedan samma för `data-tkbsts-1` och `data-tkbsts-2` — en i taget.
+
+## 6. Korrekt nedskalning och radering
+
+```bash
+kubectl scale statefulset tkbsts --replicas=0
+kubectl get pods -w
+```
+
+Förväntat: Poddarna går ner i omvänd ordning — `tkbsts-2` först, sedan `tkbsts-1`, sedan `tkbsts-0`.
+
+```bash
+kubectl delete statefulset tkbsts
+kubectl get pvc
+```
+
+Förväntat: StatefulSeten är borta men PVC:erna ligger kvar. Datat är säkrat.
+
+```bash
+kubectl delete pvc -l app=tkbsts
+```
+
+Förväntat: Nu är allt borta. Gör bara detta när du är säker på att du vill släppa datat.
+
+## 7. Deploya en DaemonSet
+
+```bash
+kubectl apply -f daemonset.yaml
+kubectl get ds
+kubectl get pods -o wide
+```
+
+Förväntat: En podd per nod i klustret. Inga `replicas`-inställningar behövs — den räknar noder själv.
+
 
 # Flashcards
 
