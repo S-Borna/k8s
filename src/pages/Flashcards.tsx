@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
 import { Select } from "@/components/Select";
@@ -15,10 +16,20 @@ type TagFilter = string | "all";
 
 export default function Flashcards() {
   const { state } = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState<Mode>("due");
   const [filter, setFilter] = useState<ChapterFilter>("all");
-  const [tagFilter, setTagFilter] = useState<TagFilter>("all");
+  const [tagFilter, setTagFilter] = useState<TagFilter>(
+    searchParams.get("tag") ?? "all",
+  );
   const [resetTick, setResetTick] = useState(0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (tagFilter === "all") params.delete("tag");
+    else params.set("tag", tagFilter);
+    setSearchParams(params, { replace: true });
+  }, [tagFilter, searchParams, setSearchParams]);
 
   const allCards = useMemo(
     () =>
