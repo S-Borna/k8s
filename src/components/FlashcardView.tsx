@@ -22,7 +22,21 @@ export function FlashcardView({ card, flipped, onFlip }: Props) {
         style={{ transformStyle: "preserve-3d" }}
       >
         <Face side="front">
-          <CardLabel>Fråga</CardLabel>
+          <div className="flex items-center justify-between gap-3">
+            <CardLabel>Fråga</CardLabel>
+            {card.tags.length > 0 && (
+              <div className="flex flex-wrap justify-end gap-1.5">
+                {card.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-border/60 bg-surface/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-text-faint"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <p className="mt-3 font-display text-2xl leading-snug text-text md:text-3xl">
             {card.question}
           </p>

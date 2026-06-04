@@ -393,46 +393,46 @@ sudo vi /etc/hosts    # Ta bort tillagda rader
 
 # Flashcards
 
-## Q: Vad är skillnaden mellan Service och Ingress?
+## Q [networking, ingress]: Vad är skillnaden mellan Service och Ingress?
 
 **A:** Service jobbar på Layer 4 — routar via IP/port. Ingress jobbar på Layer 7 (HTTP) — routar via hostname och path. Ingress ligger ovanpå Services; varje regel pekar på en ClusterIP Service. En Service = en tjänst. En Ingress = många tjänster bakom EN load balancer.
 
-## Q: Varför har K8s inte inbyggd Ingress controller?
+## Q [networking, ingress]: Varför har K8s inte inbyggd Ingress controller?
 
 **A:** Designval — K8s definierar API:t, marknaden bygger implementationerna. Du väljer själv: NGINX, Traefik, HAProxy, Istio. Olika styrkor för olika behov.
 
-## Q: Vad gör en Ingress controller?
+## Q [networking, ingress]: Vad gör en Ingress controller?
 
 **A:** Den körs som Pod i klustret och lyssnar på Ingress-objekt via API server. När en request kommer in läser den HTTP-headers (Host, path) och routar till rätt backend Service.
 
-## Q: Vad är `ingressClassName` och varför finns det?
+## Q [networking, ingress]: Vad är `ingressClassName` och varför finns det?
 
 **A:** Anger vilken Ingress controller som ska hantera detta Ingress-objekt. Behövs när flera controllers körs på samma kluster (t.ex. nginx för publik, traefik för intern). Utan det väljs default IngressClass.
 
-## Q: Vad är skillnaden mellan host-baserad och path-baserad routing?
+## Q [networking, ingress]: Vad är skillnaden mellan host-baserad och path-baserad routing?
 
 **A:** Host-baserad: olika hostnames (shield.mcu.com, hydra.mcu.com) → olika Services. Kräver att DNS pekar alla hostnames till samma LB-IP. Path-baserad: samma hostname (mcu.com), olika paths (/shield, /hydra) → olika Services. Enklare DNS men kräver path-rewriting för att appen ska se rätt path.
 
-## Q: Vad är `rewrite-target` annotation?
+## Q [networking, ingress]: Vad är `rewrite-target` annotation?
 
 **A:** NGINX-specifik annotation som skriver om path innan requesten når backend. T.ex. mcu.com/shield → "/". Utan rewrite ser appen "/shield" och hittar kanske inte routen. Annotations är controller-specifika — varje controller har sina egna.
 
-## Q: Vad är fördelen med Ingress över LoadBalancer-Service?
+## Q [networking, ingress]: Vad är fördelen med Ingress över LoadBalancer-Service?
 
 **A:** En load balancer istället för många — billigare och enklare. Host/path-routing för många appar. TLS-certifikat hanteras på ett ställe. För 25 appar: 1 Ingress + 1 LB istället för 25 LoadBalancer-Services.
 
-## Q: Stödjer Ingress andra protokoll än HTTP?
+## Q [networking, ingress]: Stödjer Ingress andra protokoll än HTTP?
 
 **A:** Nej, bara HTTP/HTTPS. För TCP/UDP behövs annat: LoadBalancer-Service eller Gateway API. Ingress är gjord för HTTP-routing.
 
-## Q: Hur hanterar Ingress TLS?
+## Q [networking, ingress]: Hur hanterar Ingress TLS?
 
 **A:** Certifikat lagras som Secrets (type=kubernetes.io/tls). Ingress refererar secret-namnet under `tls:`. Controllern terminerar TLS — backend pratar vanlig HTTP. Med cert-manager + Let's Encrypt sköts utfärdning och rotation automatiskt.
 
-## Q: Vad är skillnaden mellan Traefik och NGINX som Ingress controller?
+## Q [networking, ingress]: Vad är skillnaden mellan Traefik och NGINX som Ingress controller?
 
 **A:** NGINX: mogen, mest använd, traditionell config. **NGINX Ingress controller är arkiverad sedan 2025** — inga uppdateringar. Traefik: modern, autodiscovery, inbyggd dashboard. Funktionellt likvärdiga — annotations skiljer i syntax. Labbklustret kör Traefik. Gateway API är framtiden.
 
-## Q: Vad är cert-manager?
+## Q [networking, ingress]: Vad är cert-manager?
 
 **A:** K8s-controller som hanterar TLS-certifikat som K8s-resurser (`kind: Certificate`). Integrerar med Let's Encrypt för automatisk cert-utfärdning och rotation. Certifikat lagras som Secrets, refereras från Ingress. Standardlösningen för TLS i K8s 2026.

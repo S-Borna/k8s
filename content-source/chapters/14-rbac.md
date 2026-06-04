@@ -388,42 +388,42 @@ Förväntat: `no` omedelbart. Forbidden vid riktiga anrop.
 
 # Flashcards
 
-## Q: Vilka tre säkerhetslager går varje API-request genom?
+## Q [security, rbac]: Vilka tre säkerhetslager går varje API-request genom?
 
 **A:** 1) Autentisering - vem är du? (certifikat, token, OIDC). 2) Auktorisering - vad får du göra? (vanligast RBAC). 3) Admission control - extra valideringar (mutating och validating webhooks). Misslyckas något av dessa avvisas requesten innan den når etcd.
 
-## Q: Vad är skillnaden mellan Role och ClusterRole?
+## Q [security, rbac]: Vad är skillnaden mellan Role och ClusterRole?
 
 **A:** Role definierar permissions inom ETT namespace. ClusterRole definierar permissions cluster-wide eller på cluster-scoped resurser (Nodes, PersistentVolumes). Båda har samma syntax - skillnaden är scope. Använd Role när möjligt (least privilege).
 
-## Q: Vad är en RoleBinding?
+## Q [security, rbac]: Vad är en RoleBinding?
 
 **A:** Kopplar en Role (eller ClusterRole) till ett subject (User, Group, eller ServiceAccount). Utan binding gör Role ingenting - det är bara en definition. Bindingen säger "denna user/SA får dessa permissions". Inom ett namespace för Role; cluster-wide för ClusterRoleBinding.
 
-## Q: Vad är en Service Account?
+## Q [security, rbac]: Vad är en Service Account?
 
 **A:** Identitet för Pods mot API server. Varje namespace har en `default` SA. Vill du ha snävare rättigheter — skapa egen SA per Pod. Pods får token automatiskt monterad.
 
-## Q: Vad är skillnaden mellan User och ServiceAccount?
+## Q [security, rbac]: Vad är skillnaden mellan User och ServiceAccount?
 
 **A:** User = för människor och externa system (kubectl-användare, CI/CD). Inte ett K8s-objekt - identitet kommer från cert/token. ServiceAccount = för Pods och processer inom klustret. Är ett K8s-objekt, kan skapas/raderas/listas. Båda kan bindas till Roles.
 
-## Q: Vad gör admission controllers?
+## Q [security, rbac]: Vad gör admission controllers?
 
 **A:** Modifierar eller validerar requests EFTER autentisering/auktorisering men FÖRE persistens till etcd. Mutating: ändrar requests (lägga till sidecar, sätta defaults). Validating: godkänner eller avvisar (säkerhetsregler, policies). Vanliga: Kyverno, OPA Gatekeeper, K8s inbyggda (PodSecurity).
 
-## Q: Varför undviker man `cluster-admin` ClusterRole?
+## Q [security, rbac]: Varför undviker man `cluster-admin` ClusterRole?
 
 **A:** `cluster-admin` är `*` på `*` — Linux root för klustret. Komprometterad token = hela klustret komprometterat. Dela inte ut, använd inte dagligen. Ge minsta möjliga behörighet istället.
 
-## Q: Vad gör `kubectl auth can-i`?
+## Q [security, rbac]: Vad gör `kubectl auth can-i`?
 
 **A:** Frågar API server om du (eller specifierad subject) får göra en viss action. Användbar för att verifiera RBAC-config utan att faktiskt göra requesten. `kubectl auth can-i delete pods --as=user@example.com` testar permissions för annan användare.
 
-## Q: Vad är "least privilege"-principen?
+## Q [security, rbac]: Vad är "least privilege"-principen?
 
 **A:** Ge bara minsta möjliga permissions för att uppgiften ska fungera. CI/CD-pipeline behöver kanske bara skapa Deployments i ett namespace - inte cluster-admin. Default-mindset i K8s. Reducerar blast radius vid security incidents.
 
-## Q: Vad händer om en Pod inte specifierar serviceAccountName?
+## Q [security, rbac]: Vad händer om en Pod inte specifierar serviceAccountName?
 
 **A:** Använder default service account i namespace. Default har minimala permissions - ofta bara basic discovery. Om Podden behöver mer (t.ex. lista Pods, skapa resurser) krävs egen Service Account med specifika RBAC-rules. Default är säker fallback.

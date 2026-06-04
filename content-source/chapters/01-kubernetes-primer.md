@@ -88,26 +88,26 @@ Se Kap 3 för 8 april-genomgången.
 
 # Flashcards
 
-## Q: Vad är CNCF och vilken roll har de för K8s?
+## Q [grunder]: Vad är CNCF och vilken roll har de för K8s?
 
 **A:** Cloud Native Computing Foundation — stiftelsen som styr K8s sedan Google donerade det 2015. CNCF håller K8s leverantörsneutralt så ingen enskild aktör (Google, AWS, Red Hat) kan kapa projektet. Därför kör K8s likadant på alla moln.
 
-## Q: Vad menas med "cloud-native"?
+## Q [grunder]: Vad menas med "cloud-native"?
 
 **A:** Appar designade för molnet — små, stateless, paketerade som containers, pratar via API:er. Cloud-native är inte samma som "körs i molnet". En monolit i AWS är inte cloud-native.
 
-## Q: Varför plockades Docker bort som container runtime?
+## Q [grunder]: Varför plockades Docker bort som container runtime?
 
 **A:** Docker var byggt för utvecklare, inte som runtime åt en orkestrator. K8s pratade med Docker via en shim som gjorde stacken onödigt komplex. `containerd` (som Docker använder internt ändå) gör samma jobb enklare och uppfyller CRI. För användare ändrades inget — kubectl och YAML är samma.
 
-## Q: Vilka är de fyra huvudfördelarna med K8s jämfört med dedikerade servrar?
+## Q [grunder]: Vilka är de fyra huvudfördelarna med K8s jämfört med dedikerade servrar?
 
 **A:** Self-healing (dör container, startas ny), skalning (manuellt eller automatiskt via HPA), rolling updates (uppdatera utan nedtid), service discovery (appar hittar varandra via DNS). De fyra ersätter manuell drift som annars krävde ops-team.
 
-## Q: När är K8s INTE rätt val?
+## Q [grunder]: När är K8s INTE rätt val?
 
 **A:** Små team med få tjänster, eller när driften kostar mer än K8s ger tillbaka. Då räcker Docker Compose, en PaaS (Railway, Fly.io) eller managed services. K8s lönar sig först när du har många tjänster, många team, eller hårda krav på tillgänglighet.
 
-## Q: Vad är skillnaden mellan ett "kluster" och en "nod"?
+## Q [grunder]: Vad är skillnaden mellan ett "kluster" och en "nod"?
 
 **A:** Ett kluster är hela K8s-installationen - flera maskiner som samarbetar. En nod är en enskild maskin (fysisk eller virtuell) i klustret. Workloads körs på noder; klustret är koordinatorn.

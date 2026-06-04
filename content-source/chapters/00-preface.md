@@ -85,18 +85,18 @@ Inga lektion-specifika hands-on i kap 0. Se Kap 3 för 8 april-genomgången.
 
 # Flashcards
 
-## Q: Vad är Kubernetes i en mening?
+## Q [grunder]: Vad är Kubernetes i en mening?
 
 **A:** Kubernetes är en orkestrator för containers — den startar, stoppar, skalar, helar och uppdaterar appar över ett kluster av maskiner. Du slipper sköta enskilda servrar manuellt.
 
-## Q: Vad menas med att K8s är "deklarativ"?
+## Q [grunder]: Vad menas med att K8s är "deklarativ"?
 
 **A:** Du beskriver önskat läge i YAML (t.ex. 10 nginx-Pods) och K8s jobbar hela tiden för att verkligheten ska matcha. Motsatsen är imperativ — där du säger steg för steg vad som ska hända. Deklarativt gör self-healing möjligt.
 
-## Q: Varför körs K8s ovanpå containers istället för VMs?
+## Q [grunder]: Varför körs K8s ovanpå containers istället för VMs?
 
 **A:** Containers startar på sekunder och paketerar app + runtime som en enhet — VMs tar minuter och drar mycket mer resurser. K8s kan därför ersätta en trasig container på sekunder utan att användaren märker något.
 
-## Q: Vad gör en orkestrator?
+## Q [grunder]: Vad gör en orkestrator?
 
 **A:** Den schemalägger workloads till noder, övervakar hälsa, ersätter trasiga instanser, balanserar trafik och hanterar config + secrets. Utan orkestrator gör du allt detta manuellt eller med egna skript.

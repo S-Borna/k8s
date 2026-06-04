@@ -108,30 +108,30 @@ _Ingen dedikerad lektion på detta kapitel — se Hands-on ovan._
 
 # Flashcards
 
-## Q: Vad är skillnaden mellan PV och PVC?
+## Q [storage]: Vad är skillnaden mellan PV och PVC?
 
 **A:** PV är faktisk storage i klustret — en EBS-volym, NFS-share, lokal disk. PVC är användarens begäran: "jag behöver 10 GB". K8s matchar PVC mot tillgänglig PV. Apputvecklaren bryr sig inte om underliggande storage — bara att begäran fylls.
 
-## Q: Vad gör en StorageClass?
+## Q [storage]: Vad gör en StorageClass?
 
 **A:** Mall för att skapa PV dynamiskt. När en PVC skapas med en StorageClass skapar K8s automatiskt en matchande PV. Låter klustret ha flera "tiers" av storage (fast SSD, slow HDD) som användare kan välja mellan.
 
-## Q: Vad är skillnaden mellan ReadWriteOnce och ReadWriteMany?
+## Q [storage]: Vad är skillnaden mellan ReadWriteOnce och ReadWriteMany?
 
 **A:** RWO = en nod kan mounta för läs/skriv (vanligast, fungerar med block storage som EBS). RWX = flera noder kan mounta samtidigt för läs/skriv. RWX kräver shared filesystem (NFS, CephFS) och stöds inte av alla storage-backends. Block storage (EBS) är RWO bara.
 
-## Q: Vad är CSI?
+## Q [storage]: Vad är CSI?
 
 **A:** Container Storage Interface — pluggbart gränssnitt för storage-drivare. K8s pratar inte med EBS/Azure Disk/GCP PD direkt — den delegerar till CSI-drivaren. Varje moln har egna. Liknar CNI för nätverk: K8s API är skilt från underliggande implementation.
 
-## Q: Vad är skillnaden mellan Delete och Retain reclaim policy?
+## Q [storage]: Vad är skillnaden mellan Delete och Retain reclaim policy?
 
 **A:** Vad händer med PV när PVC raderas. Delete = PV och underliggande storage raderas (default för dynamic). Retain = PV behålls, manuell rensning krävs. Retain är säkrare för viktig data - oavsiktlig PVC-radering förstör inte data.
 
-## Q: Kan en PV användas av flera Pods samtidigt?
+## Q [storage]: Kan en PV användas av flera Pods samtidigt?
 
 **A:** Beror på access mode. RWO = nej (bara en nod). RWX = ja, om underliggande storage stödjer det (NFS, CephFS). I praktiken kör de flesta workloads RWO och scalar genom att ha flera Pods med egen PVC var (StatefulSets gör detta).
 
-## Q: Var sker faktiskt mountning av en volym?
+## Q [storage]: Var sker faktiskt mountning av en volym?
 
 **A:** Kubelet på noden där Pod schemaläggs. Kubelet anropar CSI-drivaren för att attachera och mounta volymen. Sedan görs den tillgänglig till containern via volumeMount. Detta är osynligt för apputvecklaren - K8s sköter hela kedjan.

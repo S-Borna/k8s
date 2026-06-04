@@ -90,25 +90,33 @@ function isSectionName(s: string): s is SectionName {
   return (SECTION_NAMES as readonly string[]).includes(s);
 }
 
+const FLASHCARD_HEADING_RE = /^##\s+Q\s*(?:\[([^\]]+)\])?\s*:\s*(.+)$/;
+
 export function parseFlashcards(
   sectionBody: string,
   chapterId: number,
 ): Flashcard[] {
   const cards: Flashcard[] = [];
-  const blocks = splitByH2QuestionMarker(sectionBody, /^##\s+Q:\s*(.+)$/);
+  const blocks = splitByH2QuestionMarker(sectionBody, FLASHCARD_HEADING_RE);
 
   for (const [idx, block] of blocks.entries()) {
     const { heading, body } = block;
-    const qMatch = heading.match(/^##\s+Q:\s*(.+)$/);
+    const qMatch = heading.match(FLASHCARD_HEADING_RE);
     if (!qMatch) continue;
-    const question = (qMatch[1] ?? "").trim();
+    const tagsRaw = qMatch[1] ?? "";
+    const question = (qMatch[2] ?? "").trim();
     const answer = stripAnswerPrefix(body).trim();
     if (!question || !answer) continue;
+    const tags = tagsRaw
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0);
     cards.push({
       id: `ch${chapterId}-fc-${idx + 1}`,
       chapterId,
       question,
       answer,
+      tags,
     });
   }
   return cards;

@@ -3,6 +3,7 @@ export type Flashcard = {
   chapterId: number;
   question: string;
   answer: string;
+  tags: string[];
 };
 
 export type HandsOnStep = {

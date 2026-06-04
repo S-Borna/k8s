@@ -277,38 +277,38 @@ kubectl config set-context --current --namespace=default
 
 # Flashcards
 
-## Q: Vad är en Namespace i K8s?
+## Q [namespaces, grunder]: Vad är en Namespace i K8s?
 
 **A:** En logisk gruppering av resurser inom samma kluster — som ett virtuellt kluster. Ger eget scope för namn, egna RBAC-regler och resource quotas. Inte samma som Linux kernel namespaces, och ger INTE nätverksisolering.
 
-## Q: Ger Namespaces nätverksisolering?
+## Q [namespaces, grunder]: Ger Namespaces nätverksisolering?
 
 **A:** Nej. Pods i olika namespaces kan prata med varandra fritt via FQDN (`service.namespace.svc.cluster.local`). Vill du blockera trafik måste du använda NetworkPolicies. Namespaces är logisk gruppering, inte säkerhetsgräns.
 
-## Q: Vad är skillnaden mellan namespaced och cluster-scoped objekt?
+## Q [namespaces, grunder]: Vad är skillnaden mellan namespaced och cluster-scoped objekt?
 
 **A:** Namespaced objekt (Pods, Services, Secrets) finns inom ett specifikt namespace. Cluster-scoped objekt (Nodes, PersistentVolumes, Namespaces själva) tillhör hela klustret. Du kan inte sätta en Node i ett namespace.
 
-## Q: Vilka är de fyra default-namespaces?
+## Q [namespaces, grunder]: Vilka är de fyra default-namespaces?
 
 **A:** `default` (dit objekt hamnar utan annat val), `kube-system` (control plane), `kube-public` (läsbart för alla), `kube-node-lease` (node heartbeats). Lägg aldrig egna saker i `kube-system`.
 
-## Q: När använder man Namespaces vs separata kluster?
+## Q [namespaces, grunder]: När använder man Namespaces vs separata kluster?
 
 **A:** Namespaces inom samma organisation — bra för dev/staging/prod eller per-team. Separata kluster mellan organisationer eller när hard isolation krävs (t.ex. olika kunder i SaaS). Namespaces är soft isolation — en komprometterad workload kan nå andra namespaces.
 
-## Q: Hur sätter man default namespace för kubectl?
+## Q [namespaces, grunder]: Hur sätter man default namespace för kubectl?
 
 **A:** `kubectl config set-context --current --namespace=<namn>`. Sparas i `~/.kube/config`. Användbart när du jobbar med ett specifikt namespace - slipper skriva `-n` på varje kommando.
 
-## Q: Vad händer när man raderar ett namespace?
+## Q [namespaces, grunder]: Vad händer när man raderar ett namespace?
 
 **A:** Alla resurser i det raderas automatiskt - Pods, Services, ConfigMaps, allt. Smidigt sätt att städa upp. Kan ta minuter om många resurser. Cluster-scoped objekt (Nodes) påverkas inte.
 
-## Q: Hur når man en Service i ett annat namespace?
+## Q [namespaces, grunder]: Hur når man en Service i ett annat namespace?
 
 **A:** Med FQDN: `service.namespace.svc.cluster.local`. Kort namn (`service`) funkar bara inom samma namespace — DNS söker bara i ditt eget namespace då.
 
-## Q: Vad är skillnaden mellan `use-context` och `set-context`?
+## Q [namespaces, grunder]: Vad är skillnaden mellan `use-context` och `set-context`?
 
 **A:** `use-context` byter mellan befintliga kontexter (kluster). `set-context` editerar en kontext (t.ex. ändrar default namespace eller user). I praktiken: `use-context prod` för att byta till prod-klustret; `set-context --current --namespace=foo` för att ändra default namespace i aktivt kontext.

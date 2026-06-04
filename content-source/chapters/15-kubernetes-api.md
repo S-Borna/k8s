@@ -296,38 +296,38 @@ Förväntat: dashboarden dyker upp i Grafana inom ungefär en minut. Inget manue
 
 # Flashcards
 
-## Q: Vad är K8s API server?
+## Q [api, observability]: Vad är K8s API server?
 
 **A:** Central komponent i control plane. Tar emot HTTP-requests, validerar, autentiserar och sparar till etcd. Allt går genom API server — kubectl, controllers, kubelet. K8s "front door".
 
-## Q: Vad är en API-grupp?
+## Q [api, observability]: Vad är en API-grupp?
 
 **A:** Gruppering av relaterade resurstyper. Core (`/api/v1/`) har Pods och Services. apps/v1 har Deployments. networking.k8s.io/v1 har Ingress. Det är detta du skriver som `apiVersion` i YAML. Grupperna gör att olika delar av API:t kan utvecklas i egen takt.
 
-## Q: Vad är skillnaden mellan alpha, beta och stable API-versioner?
+## Q [api, observability]: Vad är skillnaden mellan alpha, beta och stable API-versioner?
 
 **A:** Alpha (v1alpha1): experimentellt, kan ändras/försvinna, inte default-aktiverat. Beta (v1beta1): testas i prod, API kan ändras. Stable (v1): production-ready, bakåtkompatibilitet garanterad. Använd alltid stable i prod när möjligt.
 
-## Q: Vad är "watching" i K8s API?
+## Q [api, observability]: Vad är "watching" i K8s API?
 
 **A:** Sätt att hålla en HTTP-anslutning öppen mot API server och få push-notiser när resurser skapas, ändras eller raderas. Så här reagerar controllers på ändringar — de watchar sina resurser och triggas av events. `kubectl get pods -w` öppnar en watch.
 
-## Q: Vad är en CRD?
+## Q [api, observability]: Vad är en CRD?
 
 **A:** Custom Resource Definition. Låter dig utöka K8s API med egna resurstyper. Definiera en CRD och nu funkar t.ex. `kubectl get backups`. Grunden för operators — appar som hanterar databaser eller certifikat som K8s-objekt.
 
-## Q: Vad är en Operator?
+## Q [api, observability]: Vad är en Operator?
 
 **A:** App som utökar K8s med egen logik. Består av en CRD (ny resurstyp) + en controller (kod som reagerar på resursen). Ex: prometheus-operator låter dig hantera Prometheus som `kind: Prometheus` i YAML. Flyttar in drift-logiken i K8s deklarativa modell.
 
-## Q: Vad gör `kubectl explain`?
+## Q [api, observability]: Vad gör `kubectl explain`?
 
 **A:** Visar schema-dokumentation för en resurs eller fält. `kubectl explain pod.spec.containers` visar alla fält under containers. Användbart vid YAML-skrivning - bättre än att gissa fältnamn. Fungerar för alla resurser inklusive CRDs.
 
-## Q: Vad är skillnaden mellan PUT och PATCH?
+## Q [api, observability]: Vad är skillnaden mellan PUT och PATCH?
 
 **A:** PUT = ersätt hela objektet med en ny version. PATCH = skicka bara det du vill ändra (delta). PATCH är effektivare och säkrare när flera klienter redigerar samtidigt. `kubectl edit` gör PUT, `kubectl patch` gör PATCH.
 
-## Q: Hur kommunicerar controllers med API server?
+## Q [api, observability]: Hur kommunicerar controllers med API server?
 
 **A:** Via watch-API. Controllern listar först alla relevanta resurser och öppnar sedan en watch för att få notiser om ändringar. Lokal cache hålls synkad med API server. När ett event kommer in körs reconciliation — jämför actual mot desired och agera.

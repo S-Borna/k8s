@@ -406,34 +406,34 @@ Förväntat: En podd per nod i klustret. Inga `replicas`-inställningar behövs 
 
 # Flashcards
 
-## Q: Vad är skillnaden mellan Deployment och StatefulSet?
+## Q [workloads, storage]: Vad är skillnaden mellan Deployment och StatefulSet?
 
 **A:** Deployment = stateless, alla Pods identiska och utbytbara, random namn. StatefulSet = stateful, varje Pod har stabil identitet (namn, DNS, PVC), startas/stoppas i ordning. Deployment för web servers; StatefulSet för databaser.
 
-## Q: Varför behöver databaser StatefulSet och inte Deployment?
+## Q [workloads, storage]: Varför behöver databaser StatefulSet och inte Deployment?
 
 **A:** Databaser har state — varje Pod har egen data och egen roll (master/replica). Med Deployment är alla Pods utbytbara med random namn — då vet ingen vem som är master eller vem som har vilken data. StatefulSet ger stabilt namn, DNS och PVC. Krävs för replikering och recovery.
 
-## Q: Vad är en headless Service?
+## Q [workloads, storage]: Vad är en headless Service?
 
 **A:** Service med `clusterIP: None`. Ingen virtuell IP, ingen load balancing — DNS-lookup ger Pod-IP:n direkt. Används med StatefulSets så du kan prata med en specifik Pod, t.ex. `mongodb-0.mongo`. Klienten väljer själv vilken Pod.
 
-## Q: Vad gör volumeClaimTemplates?
+## Q [workloads, storage]: Vad gör volumeClaimTemplates?
 
 **A:** Mall för att automatiskt skapa en egen PVC per Pod i StatefulSet. `volumeClaimTemplates: data` + 3 replicas = `data-web-0`, `data-web-1`, `data-web-2`. Varje Pod får sin egen storage som följer med vid restart.
 
-## Q: Vad händer om `web-1` dör i en StatefulSet?
+## Q [workloads, storage]: Vad händer om `web-1` dör i en StatefulSet?
 
 **A:** K8s skapar ny Pod med samma namn (`web-1`), samma DNS och mountar samma PVC (`data-web-1`). Utåt är det "samma" Pod — ingen data förloras. Det är hela poängen med StatefulSet.
 
-## Q: I vilken ordning skalas StatefulSet upp och ner?
+## Q [workloads, storage]: I vilken ordning skalas StatefulSet upp och ner?
 
 **A:** Upp: lägsta index först. `web-0` → `web-1` → `web-2`. Varje väntar tills föregående är ready. Ner: omvänd ordning. `web-2` → `web-1` → `web-0`. Så hinner mastern (lägsta index) stå kvar tills replicas är nere.
 
-## Q: Kan man använda samma image i Deployment och StatefulSet?
+## Q [workloads, storage]: Kan man använda samma image i Deployment och StatefulSet?
 
 **A:** Ja - skillnaden är inte i appen utan i K8s hantering. Vissa appar (nginx) funkar i båda. Andra (PostgreSQL i master-replica setup) behöver StatefulSet för identitet och ordning. Valet beror på app-arkitektur, inte container-image.
 
-## Q: Vad är skillnaden i DNS mellan Deployment och StatefulSet?
+## Q [workloads, storage]: Vad är skillnaden i DNS mellan Deployment och StatefulSet?
 
 **A:** Deployment + Service: `service-name.namespace.svc.cluster.local` → load-balancerar till en av Pods. StatefulSet + headless Service: `pod-name.service-name.namespace.svc.cluster.local` → specifik Pod direkt. Behövs när klienten måste nå en bestämd instans (master vs replica).

@@ -338,50 +338,50 @@ kubectl delete pod multi
 
 # Flashcards
 
-## Q: Vad är en Pod och varför finns den?
+## Q [workloads, pods]: Vad är en Pod och varför finns den?
 
 **A:** Pod är K8s minsta deploybara enhet — ett wrapper runt en eller flera containers som delar nätverk och volumes. Anledningen: gör multi-container-mönster (sidecar, adapter, ambassador) möjliga. Containers ensamma är för låg nivå — Pods är rätt nivå för K8s att hantera.
 
-## Q: Vad delar containers i samma Pod?
+## Q [workloads, pods]: Vad delar containers i samma Pod?
 
 **A:** Nätverks-namespace (samma IP, samma localhost, samma portar), storage volumes (kan dela filer), och lifecycle (startas och stoppas tillsammans). Detta är **anledningen** till att de räknas som en Pod - de är så tätt kopplade att de fungerar som en logisk enhet.
 
-## Q: Varför är Pods immutabla?
+## Q [workloads, pods]: Varför är Pods immutabla?
 
 **A:** Eftersom Pods inte kan ändras kan K8s alltid återskapa dem från YAML. Det är grunden för rolling updates, rollbacks och self-healing. Kunde Pods muteras skulle K8s aldrig kunna garantera att verkligheten matchar YAML — reconciliation skulle braka.
 
-## Q: Vad är skillnaden mellan liveness och readiness probe?
+## Q [workloads, pods]: Vad är skillnaden mellan liveness och readiness probe?
 
 **A:** Liveness = "körs containern?" - failar den, restartas containern. Readiness = "är containern redo för trafik?" - failar den, tas Podden ut ur Service-rotationen men startas inte om. Liveness fixar trasiga containers; readiness skyddar trafik från containers som inte är redo (t.ex. startar upp eller är överbelastade).
 
-## Q: När kör man Pods direkt utan Deployment?
+## Q [workloads, pods]: När kör man Pods direkt utan Deployment?
 
 **A:** Bara för debugging eller engångsjobb. I produktion alltid via Deployment (eller Job/CronJob för engångsuppgifter). Standalone Pods saknar self-healing - dör Podden är den borta för alltid.
 
-## Q: Vad är ett sidecar-mönster?
+## Q [workloads, pods]: Vad är ett sidecar-mönster?
 
 **A:** En hjälpcontainer i samma Pod som huvudcontainern. Vanligast: logshipper som läser huvudappens loggar och skickar dem till central plats. Andra exempel: service mesh proxy (Istio), config-reloader. Funkar för att containers i samma Pod kan dela volumes och prata via localhost.
 
-## Q: Vad gör `kubectl exec`?
+## Q [workloads, pods]: Vad gör `kubectl exec`?
 
 **A:** Kör ett kommando inuti en körande container, ofta `sh` eller `bash` för interaktiv shell. Användbart för felsökning - du kan kolla filer, processer, nätverk inifrån containern. `-it` för interactive + tty.
 
-## Q: Vilka tillstånd kan en Pod vara i?
+## Q [workloads, pods]: Vilka tillstånd kan en Pod vara i?
 
 **A:** Pending (schemaläggs eller väntar på image), Running (körs), Succeeded (alla containers exited cleanly - för Jobs), Failed (minst en container kraschade), Unknown (kubelet kan inte rapportera, oftast nod nere). Pending som fastnar är vanligaste felet - kolla events med `kubectl describe`.
 
-## Q: Vad är en init-container?
+## Q [workloads, pods]: Vad är en init-container?
 
 **A:** Container som körs **innan** huvudcontainerna i en Pod. Måste exitera framgångsrikt innan main containers startar. Användbart för setup: vänta på databas, migrera schema, ladda ner config. Init-containers körs sekventiellt, main-containers parallellt.
 
-## Q: Varför är labels på Pods kritiska?
+## Q [workloads, pods]: Varför är labels på Pods kritiska?
 
 **A:** Services och Deployments hittar Pods via labels (selectors). Utan rätt labels hittar Service inte Podden och trafik routas inte. Labels är limmet som binder ihop K8s-objekt — de ger lös koppling mellan Pods och det som använder dem.
 
-## Q: Hur bestämmer man rätt resource requests och limits?
+## Q [workloads, pods]: Hur bestämmer man rätt resource requests och limits?
 
 **A:** Inte gissa - mät. Deploya utan limits initialt, samla metrics under minst ett dygn, basera requests/limits på observerad användning, justera kontinuerligt eftersom laster följer mönster (dygn/vecka/månad/år). För höga requests slösar resurser. För låga limits ger onödiga OOM-killar.
 
-## Q: Vad är emptyDir och när används det?
+## Q [workloads, pods]: Vad är emptyDir och när används det?
 
 **A:** Temporär volym som delar Podens livscykel - skapas när Pod skapas, försvinner när Pod dör. Används för att dela data mellan containers i samma Pod (cache, scratch space, shared files). Inte för persistent data - då behövs PersistentVolume.

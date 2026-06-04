@@ -328,46 +328,46 @@ kubectl delete pod client
 
 # Flashcards
 
-## Q: Varför behövs Services framför Pods?
+## Q [networking, services]: Varför behövs Services framför Pods?
 
 **A:** Pods är efemerala — de dör, startar om, byter IP. Klienter kan inte ringa direkt på Pod-IP. Service ger ett stabilt namn + IP framför Pods och lastbalanserar till friska Pods via labels.
 
-## Q: Hur hittar Service rätt Pods?
+## Q [networking, services]: Hur hittar Service rätt Pods?
 
 **A:** Via labels. Service har en `selector` med label-par. Pods som matchar ALLA labels hamnar i EndpointSlice. Service routar trafik till någon av dem. Service vet inget om specifika Pods — bara labels matchar.
 
-## Q: Vad är skillnaden mellan port, targetPort och nodePort?
+## Q [networking, services]: Vad är skillnaden mellan port, targetPort och nodePort?
 
 **A:** `port` = porten Service själv lyssnar på (ClusterIP-port). `targetPort` = porten på Pods (där containern lyssnar). `nodePort` = porten på varje nod (för NodePort-typ, 30000-32767). Olika portar för olika lager - mappning sker automatiskt.
 
-## Q: Vad är skillnaden mellan ClusterIP, NodePort och LoadBalancer?
+## Q [networking, services]: Vad är skillnaden mellan ClusterIP, NodePort och LoadBalancer?
 
 **A:** Bygger på varandra. ClusterIP = bara intern (default). NodePort = ClusterIP + port på varje nod (extern access via nod-IP:port, höga portar). LoadBalancer = NodePort + extern moln-LB med publik IP (låga portar, enklast extern access). Du får alltid lägre lager när du väljer ett högre.
 
-## Q: Vad är ett EndpointSlice?
+## Q [networking, services]: Vad är ett EndpointSlice?
 
 **A:** Live-lista av Pods som matchar en Services selector. Skapas automatiskt när Service skapas. Uppdateras automatiskt när Pods scalas, dör, eller skapas. Service routar trafik till slumpmässig Pod i EndpointSlice (eller via session affinity). Äldre K8s använde "Endpoints" - EndpointSlices är prestanda-optimerade.
 
-## Q: Varför ska man använda DNS istället för IP för Services?
+## Q [networking, services]: Varför ska man använda DNS istället för IP för Services?
 
 **A:** DNS-namn (`my-service`) är stabilt - följer Service-objektet. ClusterIP kan ändras om Service återskapas. Dessutom: DNS gör koden mer läsbar och flyttbar mellan kluster. Hardcodade IP är en anti-pattern.
 
-## Q: Vad är skillnaden mellan `kubectl edit` och `kubectl patch`?
+## Q [networking, services]: Vad är skillnaden mellan `kubectl edit` och `kubectl patch`?
 
 **A:** `edit` öppnar interaktiv editor (vim default) — bra vid terminalen. `patch` skickar JSON/YAML direkt — bra för pipelines och scripts (CI/CD). Båda uppdaterar resursen via API server.
 
-## Q: Varför misslyckas Service trots att Pods är "Running"?
+## Q [networking, services]: Varför misslyckas Service trots att Pods är "Running"?
 
 **A:** Vanligaste orsaken: selector matchar inga Pods (typo i labels). EndpointSlice är tomt → ingen trafik routas → connection refused. Andra orsaker: targetPort fel (Pods lyssnar på annan port), readiness probe failar (Pods finns inte i EndpointSlice). `kubectl describe svc <namn>` visar Endpoints - tomt = problem.
 
-## Q: Hur fungerar blue/green deployment med Services?
+## Q [networking, services]: Hur fungerar blue/green deployment med Services?
 
 **A:** Två Deployments (blue + green) med olika labels (t.ex. `version: blue`, `version: green`). En Service med selector som pekar på en av dem. Byt selector → trafiken switchar omedelbart till andra deployment. EndpointSlice uppdateras direkt - noll downtime, ingen request tappad. Smidigt sätt att rolla ut nya versioner med möjlighet till instant rollback.
 
-## Q: Vad är External Traffic Policy?
+## Q [networking, services]: Vad är External Traffic Policy?
 
 **A:** Styr hur extern trafik routas. `Cluster` (default) - LB över alla noder, döljer ursprungs-IP (klienten ses som Service-IP internt). `Local` - bara Pods på ankomst-noden får trafik, ursprungs-IP bevaras. Local används när du behöver veta klientens IP (loggning, rate-limiting). Cluster är bättre för spridning över alla noder.
 
-## Q: Varför hicker Service vid nedskalning?
+## Q [networking, services]: Varför hicker Service vid nedskalning?
 
 **A:** När en Pod tas ner kan en pågående request routas till den terminerande Podden innan EndpointSlice hunnit uppdateras. Klienten får en error. I produktion löses detta med graceful shutdown - preStop hooks + tid för Podden att avsluta pågående requests innan SIGTERM. Det är därför `terminationGracePeriodSeconds` finns.

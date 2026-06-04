@@ -488,30 +488,30 @@ Förväntat: när MR stängs/mergas körs stop-jobbet och hela miljön rivs ner.
 
 # Flashcards
 
-## Q: Vad är skillnaden mellan ConfigMap och Secret?
+## Q [config, security]: Vad är skillnaden mellan ConfigMap och Secret?
 
 **A:** ConfigMap = icke-känslig konfiguration (log levels, feature flags, hostnames). Secret = känslig data (lösenord, API-nycklar, certifikat). Tekniskt nästan identiska, men Secrets är base64-kodade och behandlas mer försiktigt av K8s (visas inte i `describe`, kan krypteras at rest, kan integreras med externa secret managers).
 
-## Q: Är Secrets krypterade?
+## Q [config, security]: Är Secrets krypterade?
 
 **A:** Nej — bara base64-kodade. Vem som kan läsa Secret kan köra `base64 -d` och få klartext. För riktig säkerhet: aktivera encryption at rest i etcd, eller använd Vault/AWS Secrets Manager.
 
-## Q: Vad är skillnaden mellan att använda ConfigMap som env var vs som mountad fil?
+## Q [config, security]: Vad är skillnaden mellan att använda ConfigMap som env var vs som mountad fil?
 
 **A:** Env vars: enkelt, men uppdateras inte när ConfigMap ändras — Pod måste startas om. Mountade filer: uppdateras automatiskt (upp till 1 min fördröjning), men appen måste själv läsa om filen.
 
-## Q: Varför uppdateras env vars inte automatiskt?
+## Q [config, security]: Varför uppdateras env vars inte automatiskt?
 
 **A:** Env vars sätts när Pod startar och kan inte ändras i den körande processen. Mountade filer kan däremot skrivas om live av kubelet. Det är en Linux-begränsning, inte ett K8s-val.
 
-## Q: Hur skapar man Secret från en fil?
+## Q [config, security]: Hur skapar man Secret från en fil?
 
 **A:** `kubectl create secret generic my-secret --from-file=key=path/to/file`. Filens innehåll blir base64-kodat och lagras under nyckeln "key". Användbart för certifikat, SSH-nycklar. Filen ska INTE checkas in i Git - skapa Secret manuellt eller via CI/CD.
 
-## Q: Varför ska man inte hardcoda config i container-imagen?
+## Q [config, security]: Varför ska man inte hardcoda config i container-imagen?
 
 **A:** Samma image ska kunna köras i dev, staging och prod med olika config. Hardcodad config kräver en image per miljö — dyrt och lätt att klanta till. Giacomos exempel: en image för 20 kunder istället för 20 olika images.
 
-## Q: Vad är `envFrom`?
+## Q [config, security]: Vad är `envFrom`?
 
 **A:** Mappar ALLA nycklar i en ConfigMap eller Secret till env vars i Podden, utan att lista varje nyckel manuellt. Smidigt för många config-nycklar. Risk: alla nycklar exponeras, vilket kan vara oavsiktligt om ConfigMap har känslig data.

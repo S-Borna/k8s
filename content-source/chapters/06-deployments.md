@@ -360,42 +360,42 @@ Förväntat: Deployment och alla Pods borta.
 
 # Flashcards
 
-## Q: Vad är skillnaden mellan Deployment, ReplicaSet och Pod?
+## Q [workloads, deployments]: Vad är skillnaden mellan Deployment, ReplicaSet och Pod?
 
 **A:** Deployment är det du interagerar med - definierar antal replikor, image, update-strategi. ReplicaSet skapas automatiskt av Deployment och hanterar self-healing/skalning - editera den aldrig direkt. Pods är slutprodukten - skapas av ReplicaSet och kör dina containers. Hierarki: Deployment → ReplicaSet → Pods.
 
-## Q: Vad gör maxSurge och maxUnavailable?
+## Q [workloads, deployments]: Vad gör maxSurge och maxUnavailable?
 
 **A:** Vid rolling update styr de hastighet vs säkerhet. `maxSurge` = max antal Pods ÖVER desired. `maxUnavailable` = max antal Pods UNDER desired. maxSurge=1, maxUnavailable=0 → långsam men säker. maxSurge=5, maxUnavailable=0 → snabbare, fortfarande säker. maxUnavailable>0 → snabbast, men kapaciteten sjunker tillfälligt.
 
-## Q: Hur fungerar rollback i K8s?
+## Q [workloads, deployments]: Hur fungerar rollback i K8s?
 
 **A:** Gamla ReplicaSets behålls med sin config intakt (styrs av `revisionHistoryLimit`). Rollback = vind upp gamla RS, vind ner nya. `kubectl rollout undo deployment/<namn> --to-revision=N`. Viktigt: undo är imperativt - YAML-filen i Git är fortfarande den nya versionen, så uppdatera den.
 
-## Q: Vad är HPA och vad krävs för att den ska fungera?
+## Q [workloads, deployments]: Vad är HPA och vad krävs för att den ska fungera?
 
 **A:** Horizontal Pod Autoscaler - skalar antal Pods automatiskt baserat på metrics (CPU vanligast). Krav: metrics-server installerad i klustret + `resources.requests` definierat på Pods (annars vet HPA inte vad den ska jämföra mot). Sätt alltid `maxReplicas` för att undvika kostnadsexplosion.
 
-## Q: Varför ska man inte editera ReplicaSets direkt?
+## Q [workloads, deployments]: Varför ska man inte editera ReplicaSets direkt?
 
 **A:** ReplicaSets ägs av Deployments. Ändringar i RS skrivs över när Deployment-controllern reconcilierar. Vill du ändra något: ändra Deployment, så uppdaterar den RS. Detta är en del av K8s deklarativa modell.
 
-## Q: Vad är "flapping" i auto-scaling?
+## Q [workloads, deployments]: Vad är "flapping" i auto-scaling?
 
 **A:** När en autoscaler skalar upp och ner snabbt i onödan (t.ex. ner till 3, upp till 5, ner till 3 inom minuter). Slösar resurser och ger instabil prestanda. K8s motverkar detta med "stabilization windows" - default 5 min innan nedskalning. Därför är nedskalning långsammare än uppskalning.
 
-## Q: Vad händer om image inte finns vid rolling update?
+## Q [workloads, deployments]: Vad händer om image inte finns vid rolling update?
 
 **A:** Nya Pods fastnar i `ImagePullBackOff`. Gamla Pods tas inte ner förrän nya blir ready — alltså fastnar hela rolloutet. Inget downtime, gamla versionen kör vidare. Kör `kubectl rollout undo` för att gå tillbaka.
 
-## Q: Vad gör selector.matchLabels i en Deployment?
+## Q [workloads, deployments]: Vad gör selector.matchLabels i en Deployment?
 
 **A:** Definierar vilka Pods Deploymenten "äger" och hanterar. MÅSTE matcha `template.metadata.labels`. Kan inte ändras efter skapande - vill du ändra labels måste du skapa ny Deployment. Detta är limmet mellan Deployment, ReplicaSet, och Pods.
 
-## Q: Vad är `change-cause` annotation?
+## Q [workloads, deployments]: Vad är `change-cause` annotation?
 
 **A:** Annotation `kubernetes.io/change-cause` som syns i `kubectl rollout history`. Beskriver vad varje revision innehåller (t.ex. "update to version 3"). Utan den ser du bara revisionsnummer — svårt att veta vad ändringen var. Måste uppdateras manuellt på varje deploy.
 
-## Q: Varför sätter man alltid `maxReplicas` på HPA?
+## Q [workloads, deployments]: Varför sätter man alltid `maxReplicas` på HPA?
 
 **A:** Utan tak kan en DDoS-attack eller bug spinna upp oändliga Pods - enorm faktura och resursutmattning av klustret. `maxReplicas` är en safety brake. Sätt också monitoring/larm när max nås så du vet när skalningen träffar taket.
