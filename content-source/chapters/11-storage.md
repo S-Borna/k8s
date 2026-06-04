@@ -40,11 +40,11 @@ Vad händer med PV när PVC raderas?
 
 # Giacomos tillägg
 
-<!-- Fylls i efter lektionen -->
+_Ingen dedikerad lektion på detta kapitel — Storage gicks igenom kort i samband med StatefulSets (kap 13). Se där för Giacomos kommentarer kring volymer i praktiken._
 
 # Lektion
 
-<!-- Fylls i efter lektionen -->
+_Ingen dedikerad lektion på detta kapitel._
 
 # Hands-on
 
@@ -104,7 +104,7 @@ Skriv en fil till `/data`, radera Podden, skapa ny som mountar samma PVC. Filen 
 
 # Lektion hands-on
 
-<!-- Fylls i efter lektionen -->
+_Ingen dedikerad lektion på detta kapitel — se Hands-on ovan._
 
 # Flashcards
 
