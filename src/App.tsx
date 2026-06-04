@@ -7,6 +7,7 @@ import Chapter from "@/pages/Chapter";
 import Flashcards from "@/pages/Flashcards";
 import MockExam from "@/pages/MockExam";
 import Cheatsheet from "@/pages/Cheatsheet";
+import SmartReview from "@/pages/SmartReview";
 import Settings from "@/pages/Settings";
 
 const Gallery = lazy(() => import("@/playground/Gallery"));
@@ -79,6 +80,7 @@ export default function App() {
             <Route path="flashcards" element={<Flashcards />} />
             <Route path="mock-tenta" element={<MockExam />} />
             <Route path="cheatsheet" element={<Cheatsheet />} />
+            <Route path="plugga" element={<SmartReview />} />
             <Route path="installningar" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
