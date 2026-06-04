@@ -294,7 +294,7 @@ kubectl delete namespace testing
 
 ## Q: Vad är skillnaden mellan kind och minikube?
 
-**A:** kind kör K8s-noder som Docker-containers - snabbt och kan simulera flernod-kluster. minikube kör K8s i en VM - långsammare men mer "verklig" miljö. För utbildning: kind är vanligare 2026. För testning av nätverk/storage som påminner om produktion: minikube ibland bättre.
+**A:** kind kör K8s-noder som Docker-containers — snabbt och kan simulera flernod-kluster. minikube kör K8s i en VM — långsammare men närmare en riktig server. För utbildning är kind vanligast.
 
 ## Q: Vad gör Docker Desktop's inbyggda K8s?
 
@@ -302,11 +302,11 @@ kubectl delete namespace testing
 
 ## Q: Vad är ett "kontext" i kubectl?
 
-**A:** En sparad kombination av kluster + användare + namespace i `~/.kube/config`. Med kontexter kan du ha flera kluster (dev, staging, prod) och växla mellan dem med ett kommando: `kubectl config use-context prod`. Att ha tydlig prompt med aktivt kontext är säkerhetskritiskt - annars kan du av misstag köra destruktiva kommandon i fel kluster.
+**A:** En sparad kombination av kluster + användare + namespace i `~/.kube/config`. Du växlar mellan dev/staging/prod med `kubectl config use-context prod`. Visa alltid aktivt kontext i prompten — annars kan du råka köra `delete` mot prod.
 
 ## Q: Vad är CNI och varför finns det?
 
-**A:** Container Network Interface. En pluggable abstraktion för nätverket mellan Pods. K8s själv definierar inte hur Pods pratar med varandra - den delegerar till en CNI-plugin (Calico, Flannel, Cilium). Olika CNI:er har olika egenskaper: vissa stöttar NetworkPolicies, andra är snabbare, andra integrerar med moln-nätverk.
+**A:** Container Network Interface — pluggar in nätverket mellan Pods. K8s bestämmer inte själv hur Pods pratar med varandra, utan lämnar över till en CNI-plugin (Calico, Flannel, Cilium). Olika CNI:er kan olika saker — vissa stöttar NetworkPolicies, andra är snabbare, andra integrerar med molnets nätverk.
 
 ## Q: Vad är skillnaden mellan managed och självhostat K8s?
 
@@ -322,7 +322,7 @@ kubectl delete namespace testing
 
 ## Q: Varför ger port-forward INTE riktig lastbalansering?
 
-**A:** `kubectl port-forward` skapar en tunnel direkt till EN specifik Pod, inte till Service. All trafik går till samma Pod. För riktig lastbalansering måste trafiken gå genom Service - vilket kräver att klienten är i klustret (eller att Service exponeras via NodePort/LoadBalancer/Ingress). Port-forward är för debugging, inte testing av lastbalansering.
+**A:** `kubectl port-forward` öppnar en tunnel direkt till EN Pod — inte till Service. All trafik landar på samma Pod. Vill du se lastbalansering måste trafiken gå genom Service inifrån klustret, eller via NodePort/LoadBalancer/Ingress utifrån. Port-forward är för debugging, inte lastbalansering.
 
 ## Q: Hur felsöker man en Pod som hamnar i ErrImagePull?
 

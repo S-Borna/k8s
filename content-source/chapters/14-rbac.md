@@ -402,7 +402,7 @@ Förväntat: `no` omedelbart. Forbidden vid riktiga anrop.
 
 ## Q: Vad är en Service Account?
 
-**A:** En identitet för Pods (eller andra workloads) att autentisera mot API server. K8s skapar en default per namespace. För granular permissions: skapa egna Service Accounts per Pod. Service Accounts får automatiskt en bearer token monterad i Podden.
+**A:** Identitet för Pods mot API server. Varje namespace har en `default` SA. Vill du ha snävare rättigheter — skapa egen SA per Pod. Pods får token automatiskt monterad.
 
 ## Q: Vad är skillnaden mellan User och ServiceAccount?
 
@@ -414,7 +414,7 @@ Förväntat: `no` omedelbart. Forbidden vid riktiga anrop.
 
 ## Q: Varför undviker man `cluster-admin` ClusterRole?
 
-**A:** Ger fullständiga rättigheter över allt - violation av least privilege. Komprometterad token = hela klustret komprometterat. I prod: använd specifika roles per användning. `cluster-admin` reserveras för riktig admin-uppgifter.
+**A:** `cluster-admin` är `*` på `*` — Linux root för klustret. Komprometterad token = hela klustret komprometterat. Dela inte ut, använd inte dagligen. Ge minsta möjliga behörighet istället.
 
 ## Q: Vad gör `kubectl auth can-i`?
 

@@ -330,11 +330,11 @@ kubectl delete pod client
 
 ## Q: Varför behövs Services framför Pods?
 
-**A:** Pods är efemerala - startar om, byter IP, scalas upp/ned. Klienter kan inte rikta trafik mot Pod-IP eftersom IP försvinner. En Service är en stabil abstraktion med fast ClusterIP + DNS-namn som load-balancerar till matchande Pods via labels. Utan Service ingen meningsfull kommunikation mellan komponenter.
+**A:** Pods är efemerala — de dör, startar om, byter IP. Klienter kan inte ringa direkt på Pod-IP. Service ger ett stabilt namn + IP framför Pods och lastbalanserar till friska Pods via labels.
 
 ## Q: Hur hittar Service rätt Pods?
 
-**A:** Via labels. Service har en `selector` med ett antal label-key-value-par. Pods som matchar ALLA dessa labels inkluderas i EndpointSlice. När Service tar emot trafik load-balanceras den till någon av Pods i EndpointSlice. Loose coupling - Service vet inget om specifika Pods, bara labels.
+**A:** Via labels. Service har en `selector` med label-par. Pods som matchar ALLA labels hamnar i EndpointSlice. Service routar trafik till någon av dem. Service vet inget om specifika Pods — bara labels matchar.
 
 ## Q: Vad är skillnaden mellan port, targetPort och nodePort?
 
@@ -354,7 +354,7 @@ kubectl delete pod client
 
 ## Q: Vad är skillnaden mellan `kubectl edit` och `kubectl patch`?
 
-**A:** `edit` öppnar interaktiv editor (vim default) - bra för manuella ändringar. `patch` skickar JSON/YAML-fragment direkt - bra för pipelines, scripts, automation. Patch är programmatisk; edit är interaktiv. Båda gör samma sak underläckt - uppdaterar en resurs.
+**A:** `edit` öppnar interaktiv editor (vim default) — bra vid terminalen. `patch` skickar JSON/YAML direkt — bra för pipelines och scripts (CI/CD). Båda uppdaterar resursen via API server.
 
 ## Q: Varför misslyckas Service trots att Pods är "Running"?
 

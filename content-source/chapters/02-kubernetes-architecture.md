@@ -131,11 +131,11 @@ Se Kap 3.
 
 ## Q: Vilka fyra komponenter finns på control plane?
 
-**A:** API server (entrypoint), etcd (state store), scheduler (Pod-placering), controller manager (kör alla controllers). Tillsammans utgör de hjärnan i klustret. Förlorar du någon av dem är klustret allvarligt skadat - etcd är värst eftersom du då tappar all state.
+**A:** API server (entrypoint), etcd (state store), scheduler (placerar Pods), controller manager (kör alla controllers). Tillsammans är de hjärnan i klustret. Tappar du etcd tappar du all state.
 
 ## Q: Vad är reconciliation loop?
 
-**A:** En kontinuerlig process där en controller jämför desired state (vad du sade i YAML) med actual state (vad som körs) och agerar för att stänga gapet. Detta är **varför** K8s är self-healing - dör en Pod märker controllern att antalet är fel och skapar en ny. Konceptet finns i varje controller (Deployment, ReplicaSet, Service, etc).
+**A:** En controller jämför hela tiden desired state (vad du skrev i YAML) med actual state (vad som körs) och agerar för att stänga gapet. Det är **därför** K8s är self-healing — dör en Pod märker controllern att antalet är fel och skapar en ny.
 
 ## Q: Vad gör kubelet på en worker node?
 
@@ -147,7 +147,7 @@ Se Kap 3.
 
 ## Q: Vad är skillnaden mellan deklarativt och imperativt?
 
-**A:** Deklarativt = beskriv önskat tillstånd (`apply -f deploy.yaml`), K8s konvergerar dit. Imperativt = säg exakt vad som ska hända (`kubectl run nginx`). Varför viktigt: K8s reconciliation-loop bygger på deklarativt - imperativa kommandon skapar drift mellan vad som finns och vad som är versionerat. I produktion: alltid deklarativt.
+**A:** Deklarativt = beskriv önskat tillstånd (`apply -f deploy.yaml`), K8s tar dig dit. Imperativt = säg exakt vad som ska hända (`kubectl run nginx`). K8s reconciliation bygger på deklarativt — imperativa kommandon skapar drift mot det som ligger i Git. I produktion: alltid deklarativt.
 
 ## Q: Vad gör scheduler och vad är dess begränsning?
 
@@ -155,7 +155,7 @@ Se Kap 3.
 
 ## Q: Vad är skillnaden mellan API server och etcd?
 
-**A:** API server är gränssnittet - alla requests går genom den, den validerar och autentiserar. etcd är state-lagret - där allt persisteras. Du pratar aldrig direkt med etcd; du går genom API server. Detta lager separerar logik från lagring och gör arkitekturen modulär.
+**A:** API server är gränssnittet — alla requests går genom den, den validerar och autentiserar. etcd är lagret som sparar allt. Du pratar aldrig direkt med etcd, du går alltid via API server.
 
 ## Q: Hur kommunicerar control plane och worker nodes?
 

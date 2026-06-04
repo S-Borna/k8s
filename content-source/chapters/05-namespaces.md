@@ -279,11 +279,11 @@ kubectl config set-context --current --namespace=default
 
 ## Q: Vad är en Namespace i K8s?
 
-**A:** En logisk gruppering av resurser inom ett kluster - virtuella kluster. Ger eget scope för resursnamn, egna RBAC-regler, resource quotas. Är INTE samma sak som Linux kernel namespaces, och ger INTE nätverksisolering by default.
+**A:** En logisk gruppering av resurser inom samma kluster — som ett virtuellt kluster. Ger eget scope för namn, egna RBAC-regler och resource quotas. Inte samma som Linux kernel namespaces, och ger INTE nätverksisolering.
 
 ## Q: Ger Namespaces nätverksisolering?
 
-**A:** Nej. Pods i olika namespaces kan prata med varandra fritt via FQDN (`service.namespace.svc.cluster.local`). Vill du blockera trafik krävs NetworkPolicies. Detta är en vanlig missuppfattning - Namespaces är logisk gruppering, inte säkerhetsgräns.
+**A:** Nej. Pods i olika namespaces kan prata med varandra fritt via FQDN (`service.namespace.svc.cluster.local`). Vill du blockera trafik måste du använda NetworkPolicies. Namespaces är logisk gruppering, inte säkerhetsgräns.
 
 ## Q: Vad är skillnaden mellan namespaced och cluster-scoped objekt?
 
@@ -295,7 +295,7 @@ kubectl config set-context --current --namespace=default
 
 ## Q: När använder man Namespaces vs separata kluster?
 
-**A:** Namespaces inom samma organisation - bra för dev/staging/prod, eller per-team isolering. Separata kluster mellan organisationer eller när hard isolation krävs (t.ex. olika customers i SaaS). Namespaces är soft isolation - en komprometterad workload kan nå andra namespaces.
+**A:** Namespaces inom samma organisation — bra för dev/staging/prod eller per-team. Separata kluster mellan organisationer eller när hard isolation krävs (t.ex. olika kunder i SaaS). Namespaces är soft isolation — en komprometterad workload kan nå andra namespaces.
 
 ## Q: Hur sätter man default namespace för kubectl?
 
@@ -307,7 +307,7 @@ kubectl config set-context --current --namespace=default
 
 ## Q: Hur når man en Service i ett annat namespace?
 
-**A:** Med FQDN: `service.namespace.svc.cluster.local`. Kort namn (`service`) funkar bara i samma namespace. Detta beror på DNS search domains som är konfigurerade per namespace.
+**A:** Med FQDN: `service.namespace.svc.cluster.local`. Kort namn (`service`) funkar bara inom samma namespace — DNS söker bara i ditt eget namespace då.
 
 ## Q: Vad är skillnaden mellan `use-context` och `set-context`?
 

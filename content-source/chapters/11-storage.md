@@ -110,11 +110,11 @@ _Ingen dedikerad lektion på detta kapitel — se Hands-on ovan._
 
 ## Q: Vad är skillnaden mellan PV och PVC?
 
-**A:** PV (PersistentVolume) är faktisk storage i klustret - en EBS-volym, NFS-share, etc. PVC (PersistentVolumeClaim) är en användares begäran om storage ("jag behöver 10 GB"). K8s matchar PVC mot tillgänglig PV. Loose coupling - apputvecklare bryr sig inte om underliggande storage.
+**A:** PV är faktisk storage i klustret — en EBS-volym, NFS-share, lokal disk. PVC är användarens begäran: "jag behöver 10 GB". K8s matchar PVC mot tillgänglig PV. Apputvecklaren bryr sig inte om underliggande storage — bara att begäran fylls.
 
 ## Q: Vad gör en StorageClass?
 
-**A:** Mall för dynamic provisioning av PV. När PVC skapas med en StorageClass skapar K8s automatiskt en matchande PV med rätt egenskaper. Möjliggör att klustret har flera "tiers" av storage (fast SSD, slow HDD) som användare kan välja mellan.
+**A:** Mall för att skapa PV dynamiskt. När en PVC skapas med en StorageClass skapar K8s automatiskt en matchande PV. Låter klustret ha flera "tiers" av storage (fast SSD, slow HDD) som användare kan välja mellan.
 
 ## Q: Vad är skillnaden mellan ReadWriteOnce och ReadWriteMany?
 
@@ -122,7 +122,7 @@ _Ingen dedikerad lektion på detta kapitel — se Hands-on ovan._
 
 ## Q: Vad är CSI?
 
-**A:** Container Storage Interface - pluggbar abstraktion för storage-drivare. K8s själv pratar inte med EBS/Azure Disk/GCP PD direkt - den delegerar till CSI-drivare. Varje moln har egna. Liknar CNI för nätverk - separation mellan K8s API och underliggande implementation.
+**A:** Container Storage Interface — pluggbart gränssnitt för storage-drivare. K8s pratar inte med EBS/Azure Disk/GCP PD direkt — den delegerar till CSI-drivaren. Varje moln har egna. Liknar CNI för nätverk: K8s API är skilt från underliggande implementation.
 
 ## Q: Vad är skillnaden mellan Delete och Retain reclaim policy?
 

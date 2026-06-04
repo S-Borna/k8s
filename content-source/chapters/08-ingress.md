@@ -395,15 +395,15 @@ sudo vi /etc/hosts    # Ta bort tillagda rader
 
 ## Q: Vad är skillnaden mellan Service och Ingress?
 
-**A:** Service jobbar på Layer 4 (TCP/UDP) och routar baserat på IP/port. Ingress jobbar på Layer 7 (HTTP) och routar baserat på hostname och path. Ingress är ovanpå Services - varje Ingress-regel pekar på en backend Service. Service exponerar EN tjänst; Ingress kan exponera MÅNGA tjänster bakom en LB.
+**A:** Service jobbar på Layer 4 — routar via IP/port. Ingress jobbar på Layer 7 (HTTP) — routar via hostname och path. Ingress ligger ovanpå Services; varje regel pekar på en ClusterIP Service. En Service = en tjänst. En Ingress = många tjänster bakom EN load balancer.
 
 ## Q: Varför har K8s inte inbyggd Ingress controller?
 
-**A:** Designprincip - K8s definierar API:t, marknaden levererar implementationer. Olika controllers har olika styrkor: NGINX (mogen, mest använd), Traefik (lätt config, autodiscovery), HAProxy (snabb), Istio (service mesh). Genom att hålla det pluggable kan användare välja det som passar.
+**A:** Designval — K8s definierar API:t, marknaden bygger implementationerna. Du väljer själv: NGINX, Traefik, HAProxy, Istio. Olika styrkor för olika behov.
 
 ## Q: Vad gör en Ingress controller?
 
-**A:** Lyssnar på Ingress-objekt via API server. Konfigurerar sin underliggande proxy (NGINX, Traefik) baserat på dem. När request kommer in läser den HTTP-headers (Host, path) och routar till rätt backend Service. Allt sker i Pod(s) i klustret.
+**A:** Den körs som Pod i klustret och lyssnar på Ingress-objekt via API server. När en request kommer in läser den HTTP-headers (Host, path) och routar till rätt backend Service.
 
 ## Q: Vad är `ingressClassName` och varför finns det?
 
@@ -415,23 +415,23 @@ sudo vi /etc/hosts    # Ta bort tillagda rader
 
 ## Q: Vad är `rewrite-target` annotation?
 
-**A:** NGINX-specifik annotation som skriver om path innan request når backend. T.ex. mcu.com/shield → "/". Utan rewrite skulle appen se "/shield" och kanske inte ha den routen. Annotations är hur Ingress passar specifik konfiguration till sin controller - de är icke-standardiserade och varierar per controller.
+**A:** NGINX-specifik annotation som skriver om path innan requesten når backend. T.ex. mcu.com/shield → "/". Utan rewrite ser appen "/shield" och hittar kanske inte routen. Annotations är controller-specifika — varje controller har sina egna.
 
 ## Q: Vad är fördelen med Ingress över LoadBalancer-Service?
 
-**A:** En LB istället för många - billigare och enklare. Hostname/path-baserad routing - flexibelt för många microservices. Centralized TLS termination - certifikat hanteras på ett ställe. Authentication/rate limiting kan göras i controllern. För 25 appar: 1 Ingress + 1 LB istället för 25 LoadBalancer-Services.
+**A:** En load balancer istället för många — billigare och enklare. Host/path-routing för många appar. TLS-certifikat hanteras på ett ställe. För 25 appar: 1 Ingress + 1 LB istället för 25 LoadBalancer-Services.
 
 ## Q: Stödjer Ingress andra protokoll än HTTP?
 
-**A:** Nej, bara HTTP/HTTPS. För TCP/UDP behövs andra lösningar: NGINX TCP/UDP services, Service med type=LoadBalancer, eller Gateway API (nyare standard). Ingress är specifikt designat för HTTP-routing - andra protokoll har andra mekanismer.
+**A:** Nej, bara HTTP/HTTPS. För TCP/UDP behövs annat: LoadBalancer-Service eller Gateway API. Ingress är gjord för HTTP-routing.
 
 ## Q: Hur hanterar Ingress TLS?
 
-**A:** Certifikat lagras som K8s Secrets (type=kubernetes.io/tls). I Ingress-spec refererar man till secret-namnet under `tls:`. Ingress controller läser certet och terminerar TLS - backend Services pratar HTTP. Med cert-manager + Let's Encrypt kan certifikat genereras och rotateras automatiskt.
+**A:** Certifikat lagras som Secrets (type=kubernetes.io/tls). Ingress refererar secret-namnet under `tls:`. Controllern terminerar TLS — backend pratar vanlig HTTP. Med cert-manager + Let's Encrypt sköts utfärdning och rotation automatiskt.
 
 ## Q: Vad är skillnaden mellan Traefik och NGINX som Ingress controller?
 
-**A:** NGINX: mogen, performant, stort community, traditionell config. **NGINX Ingress controller är arkiverad sedan 2025** - inga uppdateringar. Traefik: modern, autodiscovery av Services, smidig TLS-hantering, dashboard inbyggd. Funktionalitet är likvärdig - syntax på annotations skiljer. Labbklustret kör Traefik. Gateway API är framtiden.
+**A:** NGINX: mogen, mest använd, traditionell config. **NGINX Ingress controller är arkiverad sedan 2025** — inga uppdateringar. Traefik: modern, autodiscovery, inbyggd dashboard. Funktionellt likvärdiga — annotations skiljer i syntax. Labbklustret kör Traefik. Gateway API är framtiden.
 
 ## Q: Vad är cert-manager?
 

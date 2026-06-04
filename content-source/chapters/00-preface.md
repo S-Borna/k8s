@@ -87,16 +87,16 @@ Inga lektion-specifika hands-on i kap 0. Se Kap 3 för 8 april-genomgången.
 
 ## Q: Vad är Kubernetes i en mening?
 
-**A:** Kubernetes är en orkestrator för containeriserade applikationer som automatiserar deployment, skalning, healing och uppdateringar över ett kluster av maskiner. Varför viktigt: det är abstraktionen som gör att du slipper hantera enskilda servrar manuellt.
+**A:** Kubernetes är en orkestrator för containers — den startar, stoppar, skalar, helar och uppdaterar appar över ett kluster av maskiner. Du slipper sköta enskilda servrar manuellt.
 
 ## Q: Vad menas med att K8s är "deklarativ"?
 
-**A:** Du beskriver önskat slutläge i YAML (10 Pods kör nginx) och K8s arbetar konstant för att verkligheten ska matcha beskrivningen. Motsatsen är imperativ - där du säger steg för steg vad som ska göras. Deklarativt vinner i K8s eftersom det möjliggör self-healing och rekonciliering.
+**A:** Du beskriver önskat läge i YAML (t.ex. 10 nginx-Pods) och K8s jobbar hela tiden för att verkligheten ska matcha. Motsatsen är imperativ — där du säger steg för steg vad som ska hända. Deklarativt gör self-healing möjligt.
 
 ## Q: Varför körs K8s ovanpå containers istället för VMs?
 
-**A:** Containers startar på sekunder, har låg overhead, och paketerar app + runtime som en enhet. Detta gör skalning och uppdateringar drastiskt snabbare än VMs. K8s utnyttjar denna snabbhet - den kan ersätta en trasig container på sekunder utan att märkas av användarna.
+**A:** Containers startar på sekunder och paketerar app + runtime som en enhet — VMs tar minuter och drar mycket mer resurser. K8s kan därför ersätta en trasig container på sekunder utan att användaren märker något.
 
 ## Q: Vad gör en orkestrator?
 
-**A:** Schemalägger workloads till noder, övervakar hälsa, ersätter failade instances, balanserar trafik, hanterar konfiguration och hemligheter. Utan orkestrator skulle du behöva göra allt detta manuellt eller med custom scripts.
+**A:** Den schemalägger workloads till noder, övervakar hälsa, ersätter trasiga instanser, balanserar trafik och hanterar config + secrets. Utan orkestrator gör du allt detta manuellt eller med egna skript.

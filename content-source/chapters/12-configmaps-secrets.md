@@ -494,15 +494,15 @@ Förväntat: när MR stängs/mergas körs stop-jobbet och hela miljön rivs ner.
 
 ## Q: Är Secrets krypterade?
 
-**A:** By default: nej, bara base64-kodade. Detta är OBFUSKERING, inte säkerhet. För riktig säkerhet: aktivera encryption at rest i etcd (gör att data krypteras innan det skrivs till disk), eller använd external secret managers (Vault, AWS Secrets Manager) via CSI Secrets Store.
+**A:** Nej — bara base64-kodade. Vem som kan läsa Secret kan köra `base64 -d` och få klartext. För riktig säkerhet: aktivera encryption at rest i etcd, eller använd Vault/AWS Secrets Manager.
 
 ## Q: Vad är skillnaden mellan att använda ConfigMap som env var vs som mountad fil?
 
-**A:** Env vars: enkelt men uppdateras INTE när ConfigMap ändras (Pod måste startas om). Mountade filer: uppdateras automatiskt (upp till 1 min fördröjning). För dynamic config använder man mountade filer + en process som watchar filsystemet eller hot-reloadar.
+**A:** Env vars: enkelt, men uppdateras inte när ConfigMap ändras — Pod måste startas om. Mountade filer: uppdateras automatiskt (upp till 1 min fördröjning), men appen måste själv läsa om filen.
 
 ## Q: Varför uppdateras env vars inte automatiskt?
 
-**A:** Env vars sätts vid Pod-start och är immutabla i den körande processen - K8s kan inte ändra dem utan att starta om Podden. Mountade filer däremot kan uppdateras live eftersom kubelet skriver om filerna i volymen. Detta är en fundamental Linux-begränsning, inte ett K8s-val.
+**A:** Env vars sätts när Pod startar och kan inte ändras i den körande processen. Mountade filer kan däremot skrivas om live av kubelet. Det är en Linux-begränsning, inte ett K8s-val.
 
 ## Q: Hur skapar man Secret från en fil?
 
@@ -510,7 +510,7 @@ Förväntat: när MR stängs/mergas körs stop-jobbet och hela miljön rivs ner.
 
 ## Q: Varför ska man inte hardcoda config i container-imagen?
 
-**A:** Samma image ska kunna köras i dev/staging/prod med olika config. Hardcodad config kräver olika images per miljö - dyrt, sårbart för misstag. Separation av config från kod är en grundprincip i 12-factor apps. K8s ConfigMaps och Secrets är K8s implementation av detta.
+**A:** Samma image ska kunna köras i dev, staging och prod med olika config. Hardcodad config kräver en image per miljö — dyrt och lätt att klanta till. Giacomos exempel: en image för 20 kunder istället för 20 olika images.
 
 ## Q: Vad är `envFrom`?
 

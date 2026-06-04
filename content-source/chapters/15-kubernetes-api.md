@@ -298,11 +298,11 @@ Förväntat: dashboarden dyker upp i Grafana inom ungefär en minut. Inget manue
 
 ## Q: Vad är K8s API server?
 
-**A:** Central komponent i control plane som tar emot HTTP-requests, validerar, autentiserar, persisterar till etcd. ALLT går genom API server - kubectl, controllers, kubelet, andra control plane-komponenter. Är K8s "front door".
+**A:** Central komponent i control plane. Tar emot HTTP-requests, validerar, autentiserar och sparar till etcd. Allt går genom API server — kubectl, controllers, kubelet. K8s "front door".
 
 ## Q: Vad är en API-grupp?
 
-**A:** Logisk gruppering av relaterade resurstyper. Core (`/api/v1/`) har grundläggande som Pods och Services. apps/v1 har Deployments. networking.k8s.io/v1 har Ingress. Detta är `apiVersion` i YAML. Grupper hanterar storleken av API:t och möjliggör utveckling i olika takt.
+**A:** Gruppering av relaterade resurstyper. Core (`/api/v1/`) har Pods och Services. apps/v1 har Deployments. networking.k8s.io/v1 har Ingress. Det är detta du skriver som `apiVersion` i YAML. Grupperna gör att olika delar av API:t kan utvecklas i egen takt.
 
 ## Q: Vad är skillnaden mellan alpha, beta och stable API-versioner?
 
@@ -310,15 +310,15 @@ Förväntat: dashboarden dyker upp i Grafana inom ungefär en minut. Inget manue
 
 ## Q: Vad är "watching" i K8s API?
 
-**A:** Mekanism för att hålla en HTTP-anslutning öppen och få push-notifieringar när resurser skapas/uppdateras/raderas. Detta är hur controllers reagerar på ändringar - de watchar relevanta resurser och triggas av events. `kubectl get pods -w` använder detta.
+**A:** Sätt att hålla en HTTP-anslutning öppen mot API server och få push-notiser när resurser skapas, ändras eller raderas. Så här reagerar controllers på ändringar — de watchar sina resurser och triggas av events. `kubectl get pods -w` öppnar en watch.
 
 ## Q: Vad är en CRD?
 
-**A:** Custom Resource Definition. Tillåter dig att utöka K8s API med egna resurstyper. Definiera en CRD och nu finns t.ex. `kubectl get backups`. Bas för operators - applikationer som hanterar komplexa system (databases, certifikat) som K8s-objekt.
+**A:** Custom Resource Definition. Låter dig utöka K8s API med egna resurstyper. Definiera en CRD och nu funkar t.ex. `kubectl get backups`. Grunden för operators — appar som hanterar databaser eller certifikat som K8s-objekt.
 
 ## Q: Vad är en Operator?
 
-**A:** Applikation som extends K8s med custom logic. Består av CRD (ny resurstyp) + controller (kod som reagerar på resursen). Ex: prometheus-operator låter dig hantera Prometheus-instances som `kind: Prometheus` i YAML. Förflyttar drift-logik in i K8s deklarativa modell.
+**A:** App som utökar K8s med egen logik. Består av en CRD (ny resurstyp) + en controller (kod som reagerar på resursen). Ex: prometheus-operator låter dig hantera Prometheus som `kind: Prometheus` i YAML. Flyttar in drift-logiken i K8s deklarativa modell.
 
 ## Q: Vad gör `kubectl explain`?
 
@@ -326,8 +326,8 @@ Förväntat: dashboarden dyker upp i Grafana inom ungefär en minut. Inget manue
 
 ## Q: Vad är skillnaden mellan PUT och PATCH?
 
-**A:** PUT = ersätt hela objektet med ny version. PATCH = applicera en delmängd av ändringar (delta). Patch är mer effektivt och säkrare för konkurrent edits. `kubectl edit` använder PUT, `kubectl patch` använder PATCH.
+**A:** PUT = ersätt hela objektet med en ny version. PATCH = skicka bara det du vill ändra (delta). PATCH är effektivare och säkrare när flera klienter redigerar samtidigt. `kubectl edit` gör PUT, `kubectl patch` gör PATCH.
 
 ## Q: Hur kommunicerar controllers med API server?
 
-**A:** Via watch-API. Controller startar genom att lista alla relevanta resurser, sedan öppnar watch för att få notifieringar om ändringar. Lokal cache hålls synkad med API server. När event kommer in triggas reconciliation - jämför actual mot desired, agera.
+**A:** Via watch-API. Controllern listar först alla relevanta resurser och öppnar sedan en watch för att få notiser om ändringar. Lokal cache hålls synkad med API server. När ett event kommer in körs reconciliation — jämför actual mot desired och agera.

@@ -82,7 +82,7 @@ Standalone Pods används bara för debugging eller engångsjobb.
 
 # Giacomos tillägg
 
-Giacomo betonade att **Pods är immutabla**. Detta är inte en designdetalj — det är **anledningen** till att K8s fungerar. Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Det är basen för rolling updates, rollbacks, och self-healing.
+Giacomo betonade att **Pods är immutabla**. Det är inte en designdetalj — det är **anledningen** till att K8s fungerar. Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Det är grunden för rolling updates, rollbacks och self-healing.
 
 > 💡 Tentarelevant: Containers i samma Pod delar `localhost`. Skriv detta som test på tentan om frågan rör multi-container.
 
@@ -340,7 +340,7 @@ kubectl delete pod multi
 
 ## Q: Vad är en Pod och varför finns den?
 
-**A:** Pod är K8s minsta deploybara enhet, ett wrapper runt en eller flera containers som delar nätverk och volumes. Anledningen: möjliggör multi-container-mönster (sidecar, adapter, ambassador) och ger ett konsekvent abstraktionslager för K8s att hantera. Containers själva är för låga; Pods är rätt nivå.
+**A:** Pod är K8s minsta deploybara enhet — ett wrapper runt en eller flera containers som delar nätverk och volumes. Anledningen: gör multi-container-mönster (sidecar, adapter, ambassador) möjliga. Containers ensamma är för låg nivå — Pods är rätt nivå för K8s att hantera.
 
 ## Q: Vad delar containers i samma Pod?
 
@@ -348,7 +348,7 @@ kubectl delete pod multi
 
 ## Q: Varför är Pods immutabla?
 
-**A:** Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Detta är basen för rolling updates, rollbacks, och self-healing. Om Pods kunde muteras skulle K8s aldrig kunna garantera att en Pod matchar sin specifikation - reconciliation skulle bli omöjligt.
+**A:** Eftersom Pods inte kan ändras kan K8s alltid återskapa dem från YAML. Det är grunden för rolling updates, rollbacks och self-healing. Kunde Pods muteras skulle K8s aldrig kunna garantera att verkligheten matchar YAML — reconciliation skulle braka.
 
 ## Q: Vad är skillnaden mellan liveness och readiness probe?
 
@@ -376,7 +376,7 @@ kubectl delete pod multi
 
 ## Q: Varför är labels på Pods kritiska?
 
-**A:** Services och Deployments hittar Pods via labels (selectors). Utan rätt labels på Pods skulle Service inte hitta dem och trafik skulle inte routas. Labels är limmet som binder ihop K8s-objekt - de gör loose coupling mellan Pods och konsumenter möjligt.
+**A:** Services och Deployments hittar Pods via labels (selectors). Utan rätt labels hittar Service inte Podden och trafik routas inte. Labels är limmet som binder ihop K8s-objekt — de ger lös koppling mellan Pods och det som använder dem.
 
 ## Q: Hur bestämmer man rätt resource requests och limits?
 

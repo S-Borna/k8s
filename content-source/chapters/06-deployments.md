@@ -300,6 +300,8 @@ kubectl apply -f deploy.yaml
 kubectl rollout status deployment/web
 ```
 
+Förväntat: 20 Pods ready.
+
 Triggera rolling update:
 ```bash
 kubectl set image deployment/web nginx=nginx:1.26
@@ -307,7 +309,9 @@ kubectl annotate deployment/web kubernetes.io/change-cause="version 2" --overwri
 kubectl rollout status deployment/web    # ~2 min
 ```
 
-Ändra till `maxSurge: 5` och uppdatera igen — märk skillnaden i hastighet.
+Förväntat: Pods byts stegvis, alltid 20 ready.
+
+Ändra till `maxSurge: 5` och uppdatera igen — märk skillnaden i hastighet (~35 sek istället för ~2 min).
 
 ## 2. Broken deployment (readiness probe-mismatch)
 
@@ -329,10 +333,14 @@ kubectl get pods    # 0/1 Ready, fastnar
 kubectl rollout status deployment/web    # timeout
 ```
 
+Förväntat: Nya Pods kör men blir aldrig ready. Gamla Pods tas inte ner — inget downtime.
+
 Rollback:
 ```bash
 kubectl rollout undo deployment/web
 ```
+
+Förväntat: Tillbaka till förra revision direkt.
 
 ## 3. Rollout history med change-cause
 
@@ -340,13 +348,15 @@ kubectl rollout undo deployment/web
 kubectl rollout history deployment/web
 ```
 
-Förväntat: Lista med revisioner och change-cause-text bredvid varje. Annoteringen följer med i historiken.
+Förväntat: Lista med revisioner och change-cause-text bredvid varje.
 
 ## 4. Cleanup
 
 ```bash
 kubectl delete deployment/web
 ```
+
+Förväntat: Deployment och alla Pods borta.
 
 # Flashcards
 
@@ -356,7 +366,7 @@ kubectl delete deployment/web
 
 ## Q: Vad gör maxSurge och maxUnavailable?
 
-**A:** Vid rolling update: `maxSurge` = max antal Pods OVER desired (kan vara nummer eller procent). `maxUnavailable` = max antal Pods UNDER desired. Tillsammans styr de hur snabbt rolloutsker. maxSurge=1, maxUnavailable=0 = långsam men säker. maxSurge=5, maxUnavailable=0 = snabb och säker. maxUnavailable>0 = kortare downtime tolereras för snabbare rollout.
+**A:** Vid rolling update styr de hastighet vs säkerhet. `maxSurge` = max antal Pods ÖVER desired. `maxUnavailable` = max antal Pods UNDER desired. maxSurge=1, maxUnavailable=0 → långsam men säker. maxSurge=5, maxUnavailable=0 → snabbare, fortfarande säker. maxUnavailable>0 → snabbast, men kapaciteten sjunker tillfälligt.
 
 ## Q: Hur fungerar rollback i K8s?
 
@@ -376,7 +386,7 @@ kubectl delete deployment/web
 
 ## Q: Vad händer om image inte finns vid rolling update?
 
-**A:** Nya Pods fastnar i `ImagePullBackOff`. Eftersom maxUnavailable hindrar att gamla Pods tas ner förrän nya är ready, fastnar rolloutsen. Inget downtime - gamla version fortsätter köra. Kör `kubectl rollout undo` för att gå tillbaka.
+**A:** Nya Pods fastnar i `ImagePullBackOff`. Gamla Pods tas inte ner förrän nya blir ready — alltså fastnar hela rolloutet. Inget downtime, gamla versionen kör vidare. Kör `kubectl rollout undo` för att gå tillbaka.
 
 ## Q: Vad gör selector.matchLabels i en Deployment?
 
@@ -384,7 +394,7 @@ kubectl delete deployment/web
 
 ## Q: Vad är `change-cause` annotation?
 
-**A:** Annotation `kubernetes.io/change-cause` som syns i `kubectl rollout history`. Beskriver vad varje revision innehåller (t.ex. "update to version 3"). Utan den ser du bara revisionsnumren - bra för audit och förståelse av historik. Måste uppdateras manuellt på varje deploy.
+**A:** Annotation `kubernetes.io/change-cause` som syns i `kubectl rollout history`. Beskriver vad varje revision innehåller (t.ex. "update to version 3"). Utan den ser du bara revisionsnummer — svårt att veta vad ändringen var. Måste uppdateras manuellt på varje deploy.
 
 ## Q: Varför sätter man alltid `maxReplicas` på HPA?
 

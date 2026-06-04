@@ -389,11 +389,11 @@ Förväntat: Alla 5 checks PASS. "LAB COMPLETE".
 
 ## Q: Vad är service discovery i K8s?
 
-**A:** Mekanismen för hur appar hittar varandra i klustret. Containers känner namn (`payments`) men behöver IP. K8s gör översättningen automatiskt via cluster-DNS. Utan service discovery skulle appar behöva hårdkoda IP, vilket bryter när Pods byter IP eller scalas.
+**A:** Sättet appar hittar varandra i klustret. Containers vet namn (`payments`) men behöver IP — K8s översätter automatiskt via cluster-DNS. Utan det skulle appar behöva hårdkoda IP, vilket bryter direkt när Pods byter IP.
 
 ## Q: Vad är coredns?
 
-**A:** K8s inbyggda DNS-server. Körs som Pods i `kube-system` namespace, fronted av en Service kallad `kube-dns`. Bevakar API server för nya Services och registrerar dem automatiskt. När en container gör DNS-lookup går request till coredns som svarar med Service ClusterIP.
+**A:** K8s inbyggda DNS-server. Körs som Pods i `kube-system`, frontas av en Service som heter `kube-dns`. Bevakar API server för nya Services och registrerar dem automatiskt. Container-DNS-lookup går till coredns, som svarar med ClusterIP.
 
 ## Q: Vad är skillnaden mellan kort namn och FQDN?
 
@@ -425,7 +425,7 @@ Förväntat: Alla 5 checks PASS. "LAB COMPLETE".
 
 ## Q: Varför ska man använda FQDN i produktionskod?
 
-**A:** Inga gissningar - rätt Service hittas alltid oavsett vilken namespace caller är i. Korta namn är bekväma för utveckling men fragila - en typo i namespace-config bryter dem. FQDN är explicit och self-documenting. Också: korta namn med fel search domains kan resolva till fel Service (samma namn i annat namespace).
+**A:** Inga gissningar — rätt Service hittas alltid oavsett vilket namespace caller ligger i. Korta namn är bekväma men sköra: en typo i namespace-config bryter dem. FQDN är explicit. Och: korta namn med fel search domains kan resolva till fel Service (samma namn i annat namespace).
 
 ## Q: Sammanfatta lösningen på service discovery-labben.
 
