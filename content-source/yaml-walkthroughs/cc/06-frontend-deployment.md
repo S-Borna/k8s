@@ -1,5 +1,5 @@
 ---
-title: "ForeverHome frontend Deployment (Next.js)"
+title: "Frontend Deployment"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Frontend Deployment"
 chapterId: 6

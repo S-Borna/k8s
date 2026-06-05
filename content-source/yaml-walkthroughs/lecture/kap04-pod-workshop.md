@@ -1,5 +1,5 @@
 ---
-title: "Multi-container Pod-workshop"
+title: "Pod-workshop"
 source: lecture
 sourceLabel: "Lektion 10 april — Kap 4 Pods"
 chapterId: 4

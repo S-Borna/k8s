@@ -1,5 +1,5 @@
 ---
-title: "Sealed Secret for backend-credentials (DB, JWT, etc.)"
+title: "Backend Secrets (sealed)"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Backend Secrets (Sealed)"
 chapterId: 12

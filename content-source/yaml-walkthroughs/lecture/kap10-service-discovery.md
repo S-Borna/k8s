@@ -1,5 +1,5 @@
 ---
-title: "Cross-namespace service discovery med jump-Pod"
+title: "Service discovery"
 source: lecture
 sourceLabel: "Lektion 27 april — Kap 10 Service Discovery"
 chapterId: 10

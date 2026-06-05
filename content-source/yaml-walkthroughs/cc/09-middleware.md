@@ -1,5 +1,5 @@
 ---
-title: "stripPrefix middleware for /api-routes"
+title: "Middleware"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Traefik Middleware"
 chapterId: 8

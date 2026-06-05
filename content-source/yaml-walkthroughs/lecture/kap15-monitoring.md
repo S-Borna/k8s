@@ -1,5 +1,5 @@
 ---
-title: "Komplett observability-stack: ServiceMonitor + PrometheusRule + Grafana dashboard"
+title: "Monitoring-stack"
 source: lecture
 sourceLabel: "Lektion 21 maj — Kap 15 Monitoring"
 chapterId: 15

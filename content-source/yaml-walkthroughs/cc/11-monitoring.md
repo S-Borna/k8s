@@ -1,5 +1,5 @@
 ---
-title: "ForeverHome monitoring (ServiceMonitor + alerts + dashboard)"
+title: "Monitoring"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Monitoring"
 chapterId: 15

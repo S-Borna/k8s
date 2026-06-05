@@ -1,5 +1,5 @@
 ---
-title: "Saids team-namespaces"
+title: "Namespaces"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Namespaces"
 chapterId: 5

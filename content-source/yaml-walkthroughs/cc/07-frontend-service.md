@@ -1,5 +1,5 @@
 ---
-title: "ForeverHome frontend Service"
+title: "Frontend Service"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Frontend Service"
 chapterId: 7

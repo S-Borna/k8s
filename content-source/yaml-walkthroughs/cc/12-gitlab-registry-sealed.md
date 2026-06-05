@@ -1,5 +1,5 @@
 ---
-title: "Sealed Secret for GitLab Container Registry-credentials"
+title: "Registry Secret"
 source: chas-challenge
 sourceLabel: "Chas Challenge — GitLab Registry Sealed Secret"
 chapterId: 12

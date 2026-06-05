@@ -1,5 +1,5 @@
 ---
-title: "ForeverHome backend Service (ClusterIP)"
+title: "Backend Service"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Backend Service"
 chapterId: 7
