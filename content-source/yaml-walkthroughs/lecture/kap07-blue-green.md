@@ -8,7 +8,7 @@ filename: "kap07-blue-green.yaml"
 
 # Varför
 
-Blue/green deployment — switcha trafik mellan two versioner utan downtime. Giacomo körde live: två Deployments (blue + green) parallellt, en Service med selector som pekar på blue, sen `kubectl patch svc` för att flippa selector till green. Inga Pods restartas, trafik byter omedelbart. Konceptet som lärs ut — Services kopplar inte till Pods via namn, utan via labels. Byter du label-filtret byter du backend.
+Blue/green deployment — switcha trafik mellan två versioner utan downtime. Giacomo körde live: två Deployments (blue + green) parallellt, en Service med selector som pekar på blue, sen `kubectl patch svc` för att flippa selector till green. Inga Pods restartas, trafik byter omedelbart. Konceptet som lärs ut — Services kopplar inte till Pods via namn, utan via labels. Byter du label-filtret byter du backend.
 
 # Blue Deployment — den första versionen
 
@@ -16,7 +16,7 @@ Första Deployment heter `web-blue` och kör 2 repliker av `hashicorp/http-echo`
 
 # Green Deployment — den nya versionen
 
-Andra Deployment heter `web-green`, identisk struktur men svarar 'green' (rad 27-51). Också 2 repliker, också label `app: web`, men `version: green` (rad 40-42). Båda Deployments lever samtidigt i klustret — green tar inte över bluees plats, den körs parallellt. Fyra Pods totalt: 2 blue + 2 green.
+Andra Deployment heter `web-green`, identisk struktur men svarar 'green' (rad 27-51). Också 2 repliker, också label `app: web`, men `version: green` (rad 40-42). Båda Deployments lever samtidigt i klustret — green tar inte över blues plats, den körs parallellt. Fyra Pods totalt: 2 blue + 2 green.
 
 # Servicen — selectorn är spaken
 
