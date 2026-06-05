@@ -3,11 +3,11 @@ kind: Service
 metadata:
   name: backend
   labels:
-    app: foreverhome
+    app: felis
     component: backend
 spec:
   selector:
-    app: foreverhome
+    app: felis
     component: backend
   ports:
     - port: 80

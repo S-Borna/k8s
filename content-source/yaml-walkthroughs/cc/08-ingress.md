@@ -16,7 +16,7 @@ Ingress ligger i `networking.k8s.io/v1` — inte `apps/v1` som Deployment (rad 1
 
 # Namn + labels
 
-Ingress-objektet heter `foreverhome` och får labeln `app: foreverhome` (rad 4-6). Namnet är bara identifierare i namespacen — det syns inte i URL:en. Labeln är för att kunna `kubectl get ingress -l app=foreverhome` senare.
+Ingress-objektet heter `felis` och får labeln `app: felis` (rad 4-6). Namnet är bara identifierare i namespacen — det syns inte i URL:en. Labeln är för att kunna `kubectl get ingress -l app=felis` senare.
 
 # Traefik-annotations (det knepiga)
 
@@ -28,7 +28,7 @@ Talar om vilken ingress-controller som ska plocka upp objektet (rad 11). Lab-klu
 
 # Host + path-routing
 
-En regel för hosten `foreverhome-doe25-said.labb.k3s.chas-lab.dev` (rad 13). Hosten matchas mot wildcard-cert på lab-klustret — därför får du HTTPS gratis. Inom hosten finns två paths: `/api` med `pathType: Prefix` går till backend-Service, `/` med `pathType: Prefix` går till frontend-Service (rad 16-29). Reglerna läses top-to-bottom — mer specifik path först, därför `/api` före `/`.
+En regel för hosten `felis-doe25-said.labb.k3s.chas-lab.dev` (rad 13). Hosten matchas mot wildcard-cert på lab-klustret — därför får du HTTPS gratis. Inom hosten finns två paths: `/api` med `pathType: Prefix` går till backend-Service, `/` med `pathType: Prefix` går till frontend-Service (rad 16-29). Reglerna läses top-to-bottom — mer specifik path först, därför `/api` före `/`.
 
 # Backend → Service, inte Pod
 

@@ -12,7 +12,7 @@ Saids egna observability-stack för appen i lab-klustret — han säger åt Prom
 
 # ServiceMonitor — säg åt Prometheus att skrapa
 
-Första blocket (rad 1-16) är en `ServiceMonitor` — en CRD från Prometheus Operator, inte vanlig K8s. Den letar efter Services med labels `app: foreverhome` och `component: backend` (rad 10-12) och börjar skrapa `/metrics` på port 5158 var 15:e sekund. Fallgrop: `release: monitoring` (rad 7) MÅSTE matcha det som operator:n filtrerar på i klustret — saknas labeln så ignoreras hela ServiceMonitorn tyst. Inga metrics, inga alerts, ingen dashboard.
+Första blocket (rad 1-16) är en `ServiceMonitor` — en CRD från Prometheus Operator, inte vanlig K8s. Den letar efter Services med labels `app: felis` och `component: backend` (rad 10-12) och börjar skrapa `/metrics` på port 5158 var 15:e sekund. Fallgrop: `release: monitoring` (rad 7) MÅSTE matcha det som operator:n filtrerar på i klustret — saknas labeln så ignoreras hela ServiceMonitorn tyst. Inga metrics, inga alerts, ingen dashboard.
 
 # PrometheusRule — tre alerts som faktiskt betyder något
 
@@ -24,7 +24,7 @@ På rad 32 står `clamp_min(sum(...), 1)` i nämnaren — det är inte slarv, de
 
 # ConfigMap som Grafana-dashboard
 
-Tredje blocket (rad 54-131) är en helt vanlig ConfigMap — men labeln `grafana_dashboard: "1"` (rad 60) är magin. Grafana sidecar i klustret letar efter just den labeln, plockar JSON-innehållet ur `data`, och importerar dashboarden automatiskt. Inga klick i Grafana-UI:t — dashboarden är kod, versionerad i repo:t. Filnyckeln `foreverhome-grupp10.json` (rad 62) blir dashboardens identitet.
+Tredje blocket (rad 54-131) är en helt vanlig ConfigMap — men labeln `grafana_dashboard: "1"` (rad 60) är magin. Grafana sidecar i klustret letar efter just den labeln, plockar JSON-innehållet ur `data`, och importerar dashboarden automatiskt. Inga klick i Grafana-UI:t — dashboarden är kod, versionerad i repo:t. Filnyckeln `felis-grupp10.json` (rad 62) blir dashboardens identitet.
 
 # Fyra paneler — RED-method light
 

@@ -16,11 +16,11 @@ Backend-Servicen är klisterlappen mellan frontend och backend-Podsen i appen. E
 
 # Labels på Servicen själv
 
-`labels` på rad 5-7 (`app: foreverhome`, `component: backend`) sitter på Service-objektet — INTE det som väljer Pods. Används bara för att gruppera/filtrera Servicen i `kubectl get svc -l app=foreverhome`. Förväxla inte med selectorn nedan — vanlig fallgrop på tentan.
+`labels` på rad 5-7 (`app: felis`, `component: backend`) sitter på Service-objektet — INTE det som väljer Pods. Används bara för att gruppera/filtrera Servicen i `kubectl get svc -l app=felis`. Förväxla inte med selectorn nedan — vanlig fallgrop på tentan.
 
 # Selectorn — hjärtat i Servicen
 
-`selector` (rad 9-11) säger vilka Pods Servicen ska skicka trafik till. Den letar efter Pods med BÅDA labels `app: foreverhome` OCH `component: backend`. Dessa måste matcha exakt det som står under `spec.template.metadata.labels` i backend-Deploymentet — annars hittar Servicen inga Pods och du får tomt svar. Stavfel här är klassisk fallgrop (Giacomo nämnde htlm-typon i kap 4 som samma kategori-fel).
+`selector` (rad 9-11) säger vilka Pods Servicen ska skicka trafik till. Den letar efter Pods med BÅDA labels `app: felis` OCH `component: backend`. Dessa måste matcha exakt det som står under `spec.template.metadata.labels` i backend-Deploymentet — annars hittar Servicen inga Pods och du får tomt svar. Stavfel här är klassisk fallgrop (Giacomo nämnde htlm-typon i kap 4 som samma kategori-fel).
 
 # Port-mappningen
 

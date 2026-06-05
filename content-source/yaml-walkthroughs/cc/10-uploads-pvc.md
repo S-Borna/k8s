@@ -14,9 +14,9 @@ PVC:n som backenden ber om för att spara uppladdningar — bilder, dokument, al
 
 En PVC är inte själva disken — det är en *beställning* på disk (rad 2). Backenden säger 'jag vill ha 5GB', och K8s matchar mot en StorageClass som faktiskt provisionerar volymen. Tänk det som en kvittolapp — Pod:en visar kvittot, K8s hämtar varan från lagret. Namnet `uploads` (rad 4) är vad Deployment:en refererar till i sin `volumes:`-sektion senare.
 
-# Label app: foreverhome
+# Label app: felis
 
-Labeln (rad 5-6) knyter PVC:n till resten av appen rent organisatoriskt — `kubectl get pvc -l app=foreverhome` listar bara mina volymer, inte andras i samma namespace. Det är inte funktionellt nödvändigt för att PVC:n ska fungera, men det är hygien Giacomo tjatar om i alla kapitel. Utan labels blir klustret en soppa när det växer.
+Labeln (rad 5-6) knyter PVC:n till resten av appen rent organisatoriskt — `kubectl get pvc -l app=felis` listar bara mina volymer, inte andras i samma namespace. Det är inte funktionellt nödvändigt för att PVC:n ska fungera, men det är hygien Giacomo tjatar om i alla kapitel. Utan labels blir klustret en soppa när det växer.
 
 # accessModes: ReadWriteOnce
 

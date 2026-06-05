@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: backend
   labels:
-    app: foreverhome
+    app: felis
     component: backend
 spec:
   replicas: 1
@@ -11,12 +11,12 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: foreverhome
+      app: felis
       component: backend
   template:
     metadata:
       labels:
-        app: foreverhome
+        app: felis
         component: backend
     spec:
       securityContext:
@@ -36,9 +36,9 @@ spec:
             - name: ASPNETCORE_FORWARDEDHEADERS_ENABLED
               value: "true"
             - name: Jwt__Issuer
-              value: "ForeverHome"
+              value: "Felis"
             - name: Jwt__Audience
-              value: "ForeverHomeUsers"
+              value: "FelisUsers"
           envFrom:
             - secretRef:
                 name: backend-secrets

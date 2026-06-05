@@ -12,7 +12,7 @@ ASP.NET Core-backenden för appen — den som driver API:t som frontend pratar m
 
 # Deployment-skelettet
 
-Standard Deployment (rad 1-8) med labels `app: foreverhome` och `component: backend`. Labels är inte kosmetika — de är limmet som Service och selector använder för att hitta rätt Pods. Om labels och selector inte matchar startar inget alls. `replicas: 1` (rad 9) — bara en Pod, vilket hänger ihop direkt med Recreate-strategin nedan.
+Standard Deployment (rad 1-8) med labels `app: felis` och `component: backend`. Labels är inte kosmetika — de är limmet som Service och selector använder för att hitta rätt Pods. Om labels och selector inte matchar startar inget alls. `replicas: 1` (rad 9) — bara en Pod, vilket hänger ihop direkt med Recreate-strategin nedan.
 
 # Recreate-strategin (viktigast i hela filen)
 

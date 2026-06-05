@@ -20,7 +20,7 @@ Många blandar ihop det här. `backend-secrets` (rad 5-7) är appens egna hemlig
 
 # Manifest-header — kind: Secret, type: Opaque
 
-Själva K8s-objektet börjar på rad 18. `apiVersion: v1` — Secret är core/v1, lever sen K8s början. `type: Opaque` (rad 25) är default-typen för godtyckliga key/value-hemligheter — används när det inte är en speciell sort (som docker-registry eller tls). Labels `app: foreverhome` + `component: backend` (rad 22-24) är Saids konvention så allt som hör till backend-stacken kan filtreras med `kubectl get all -l component=backend`.
+Själva K8s-objektet börjar på rad 18. `apiVersion: v1` — Secret är core/v1, lever sen K8s början. `type: Opaque` (rad 25) är default-typen för godtyckliga key/value-hemligheter — används när det inte är en speciell sort (som docker-registry eller tls). Labels `app: felis` + `component: backend` (rad 22-24) är Saids konvention så allt som hör till backend-stacken kan filtreras med `kubectl get all -l component=backend`.
 
 # data-blocket — base64, inte kryptering
 

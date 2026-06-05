@@ -3,7 +3,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: backend
   labels:
-    app: foreverhome
+    app: felis
     component: backend
 spec:
   scaleTargetRef:
