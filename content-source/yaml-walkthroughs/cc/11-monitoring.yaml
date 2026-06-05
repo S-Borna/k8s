@@ -1,0 +1,131 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: foreverhome-backend
+  namespace: doe25-said-ebadi
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: foreverhome
+      component: backend
+  endpoints:
+    - targetPort: 5158
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: foreverhome-grupp10
+  namespace: doe25-said-ebadi
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: foreverhome.rules
+      rules:
+        - alert: ForeverHomeHighErrorRate
+          expr: |
+            sum(rate(http_requests_received_total{namespace="doe25-said-ebadi",code=~"5..",endpoint!="/metrics"}[5m]))
+              / clamp_min(sum(rate(http_requests_received_total{namespace="doe25-said-ebadi",endpoint!="/metrics"}[5m])), 1) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ForeverHome 5xx-rate över 5% (5m)"
+            description: "Mer än 5% av requests returnerar 5xx senaste 5 minuterna."
+        - alert: ForeverHomeNoTraffic
+          expr: sum(rate(http_requests_received_total{namespace="doe25-said-ebadi",endpoint!="/metrics"}[5m])) == 0
+          for: 15m
+          labels:
+            severity: info
+          annotations:
+            summary: "ForeverHome har inte fått en enda request på 15 min"
+        - alert: ForeverHomeBackendDown
+          expr: kube_deployment_status_replicas_available{namespace="doe25-said-ebadi",deployment="backend"} < 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "ForeverHome backend-deployment har 0 tillgängliga replicas"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foreverhome-grupp10-dashboard
+  namespace: doe25-said-ebadi
+  labels:
+    grafana_dashboard: "1"
+data:
+  foreverhome-grupp10.json: |
+    {
+      "title": "ForeverHome (Grupp 10)",
+      "uid": "foreverhome-doe25-said-ebadi",
+      "schemaVersion": 39,
+      "time": { "from": "now-1h", "to": "now" },
+      "refresh": "30s",
+      "tags": ["chas-academy", "doe25", "doe25-said-ebadi", "foreverhome"],
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "Request rate (req/s) by endpoint",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum by (endpoint) (rate(http_requests_received_total{namespace=\"doe25-said-ebadi\",endpoint!=\"/metrics\"}[1m]))",
+              "legendFormat": "{{endpoint}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Error rate (5xx, share of total)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_received_total{namespace=\"doe25-said-ebadi\",code=~\"5..\",endpoint!=\"/metrics\"}[5m])) / clamp_min(sum(rate(http_requests_received_total{namespace=\"doe25-said-ebadi\",endpoint!=\"/metrics\"}[5m])), 1)",
+              "legendFormat": "5xx ratio",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0 } }
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Latency p95 (s) by endpoint",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (endpoint, le) (rate(http_request_duration_seconds_bucket{namespace=\"doe25-said-ebadi\",endpoint!=\"/metrics\"}[5m])))",
+              "legendFormat": "{{endpoint}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" } }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Requests last 5m by code",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "targets": [
+            {
+              "expr": "sum by (code) (increase(http_requests_received_total{namespace=\"doe25-said-ebadi\",endpoint!=\"/metrics\"}[5m]))",
+              "legendFormat": "{{code}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: gitlab-registry
+  namespace: doe25-group-10
+spec:
+  encryptedData:
+    .dockerconfigjson: AgBNintymm/kKqYobqVjy/Ya3M3lO6aEmu5j1BkMpO/MbSrmx+2Ol8+i9OKKbzcXb2WUv2gYRqYlLHf/vs8Supyrhm9m0WI5LUqcFrsn6bcSiMFcoEsBh1gC/bw3m1noyks7hrQkPnRKdxUb0HPti0HFnkNdFkmPPjS8O1UNlvmfVVAI9wD98fslH7+Esarci9q2shUS+z2dxvDPPK3dNt4ERj4KqzsWj56PEjQ4GH6TGadGenujA9dz/VJ6ixnzIC+Aemb+DTBpSxQmULpm0kGdoa/9kPtmOqHwb6rU+ja3hHxAgOq+oNwRex6uMJxPhItO6fQrg8LSgnlkyqW9S8ZQlYRDj2u4bZm90zfHRYXzXe4nJji2YZsPGvhgep/m0P36jgBmSXc12WvISSvnaVg/SGoQwn01DNKF6bf/MbsU8o6f3bv+ndgm6fxOOSczam+kGCLLj2fl3tuwOOSbAUTDn1111+GoNmr2Ia5FoZ2QjztloJmPlKm1UXSB4if9r3JmBuOMzUb8T0JTSIuJkljVsQAvpobZV/VYvUfzhrL6vre2kn6Cqt8biss3APcUUTYGrcsSf7sGYPu3pZ3hAwmm0e28L5Cqk3XCYOndywBRdcPa8BCeQjU4EcAX2xkf70+7WsZxjaT/ymEHwrEKbHiGP/MJ+1ELrZgnr0iP30ZI7gYjvY0C11TBl+H3GYPF+usv/x8HRsE/NEcLdh7QQIB15Ki7EaHt/Z+2xp/G5wUV3rxvEiSXnWuKJjzW7FRjE0R5WpoSm1UakreEXW7m3VG6/klUD7N3/biVq3TLntHKbgB7LN3IZ079Dyk1lFU6Xtt8vL0AB0S+Jlr6JMEvY+f6MBc9xmcRcgPVbLreM6PE4D6fsibKY38fPpz9+et1YXng1CdqVUFau6PAkPdoQIVL/nNdiTEwPTVa7ZCBAmH9KqsU7MkNjpWqxK4=
+  template:
+    metadata:
+      name: gitlab-registry
+      namespace: doe25-group-10
+    type: kubernetes.io/dockerconfigjson

@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-workshop
+  labels:
+    app: pod-workshop
+spec:
+  volumes:
+    - name: site
+      emptyDir: {}
+
+  initContainers:
+    - name: init-site
+      image: busybox:1.36
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          cat > /site/index.html <<'EOF'
+          <!doctype html>
+          <html>
+            <head>
+              <meta http-equiv="refresh" content="5">
+              <title>Pod Workshop</title>
+            </head>
+            <body>
+              <h1>Pod Workshop</h1>
+              <p>This page is served by nginx.</p>
+              <p>The live status below is written by another container in the same Pod.</p>
+              <iframe src="/status.html" width="600" height="220"></iframe>
+            </body>
+          </html>
+          EOF
+      volumeMounts:
+        - name: site
+          mountPath: /site
+
+  containers:
+    - name: web
+      image: nginx:1.27-alpine
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: site
+          mountPath: /usr/share/nginx/htlm
+
+    - name: writer
+      image: busybox:1.36
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          while true; do
+            cat > /site/status.html <<EOF
+            <!doctype html>
+            <html>
+              <body>
+                <h2>Live status</h2>
+                <p>Updated: $(date)</p>
+                <p>Hostname: $(hostname)</p>
+              </body>
+            </html>
+          EOF
+          sleep 5
+          done
+      volumeMounts:
+        - name: site
+          mountPath: /site

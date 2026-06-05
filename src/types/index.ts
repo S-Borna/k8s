@@ -34,6 +34,24 @@ export type Scenario = {
   modelAnswer: string;
 };
 
+export type YamlWalkthroughSection = {
+  title: string;
+  body: string;
+};
+
+export type YamlWalkthrough = {
+  id: string;
+  title: string;
+  source: "lecture" | "chas-challenge";
+  sourceLabel: string;
+  chapterId: number | null;
+  filename: string;
+  yaml: string;
+  why: string;
+  sections: YamlWalkthroughSection[];
+  examPoints: string[];
+};
+
 export type Chapter = {
   id: number;
   title: string;
