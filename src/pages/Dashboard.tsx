@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Target } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { ChapterCard } from "@/components/ChapterCard";
 import { NamePrompt } from "@/components/NamePrompt";
@@ -12,6 +13,7 @@ import {
   countCompletedChapters,
   countDueFlashcards,
 } from "@/lib/progress";
+import { computeWeakSpotsByTag } from "@/lib/weakSpots";
 
 export default function Dashboard() {
   const { state } = useAppState();
@@ -27,6 +29,15 @@ export default function Dashboard() {
       (c) => state.chapterProgress[c.id]?.status !== "completed",
     ) ??
     activeChapters[0];
+
+  const allCards = useMemo(
+    () => activeChapters.flatMap((c) => c.flashcards),
+    [activeChapters],
+  );
+  const weakSpots = useMemo(
+    () => computeWeakSpotsByTag(allCards, state).slice(0, 4),
+    [allCards, state],
+  );
 
   const greeting = state.settings.userName
     ? `Hej ${state.settings.userName} · ${activeChapters.length - completedChapters} kapitel kvar`
@@ -80,6 +91,12 @@ export default function Dashboard() {
             estimatedMinutes={continueChapter.estimatedMinutes}
             completion={computeChapterCompletion(continueChapter, state)}
           />
+        </motion.div>
+      )}
+
+      {weakSpots.length > 0 && (
+        <motion.div variants={staggerChild} className="mt-8">
+          <WeakSpotsCard weakSpots={weakSpots} />
         </motion.div>
       )}
 
@@ -181,6 +198,53 @@ function ContinueCard({
         </div>
       </motion.div>
     </Link>
+  );
+}
+
+function WeakSpotsCard({
+  weakSpots,
+}: {
+  weakSpots: ReturnType<typeof computeWeakSpotsByTag>;
+}) {
+  return (
+    <motion.div
+      variants={staggerChild}
+      className="glass rounded-3xl p-6 md:p-7"
+    >
+      <div className="flex items-start gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose/15 text-rose">
+          <Target size={18} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-rose">
+            Fokusera på
+          </div>
+          <div className="mt-0.5 font-display text-xl text-text">
+            Svaga ämnen från dina rätt-och-fel
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        {weakSpots.map((spot) => (
+          <Link
+            key={spot.tag}
+            to={`/flashcards?tag=${encodeURIComponent(spot.tag)}`}
+            className="group inline-flex items-center gap-2 rounded-xl border border-rose/30 bg-rose/8 px-3 py-2 text-sm text-text transition hover:border-rose/60 hover:bg-rose/15"
+          >
+            <span className="font-medium">{spot.tag}</span>
+            <span className="text-xs text-text-faint group-hover:text-rose">
+              {spot.weak} svaga · {spot.total} totalt
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      <p className="mt-4 text-xs text-text-faint">
+        Klick på tagg → flashcards filtrerat på just det ämnet. Räknas som svagt
+        om du fastnade i box 1 eller senast inte kunde fullt ut.
+      </p>
+    </motion.div>
   );
 }
 

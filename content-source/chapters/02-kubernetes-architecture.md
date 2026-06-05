@@ -129,34 +129,34 @@ Se Kap 3.
 
 # Flashcards
 
-## Q: Vilka fyra komponenter finns på control plane?
+## Q [arkitektur, grunder]: Vilka fyra komponenter finns på control plane?
 
-**A:** API server (entrypoint), etcd (state store), scheduler (Pod-placering), controller manager (kör alla controllers). Tillsammans utgör de hjärnan i klustret. Förlorar du någon av dem är klustret allvarligt skadat - etcd är värst eftersom du då tappar all state.
+**A:** API server (entrypoint), etcd (state store), scheduler (placerar Pods), controller manager (kör alla controllers). Tillsammans är de hjärnan i klustret. Tappar du etcd tappar du all state.
 
-## Q: Vad är reconciliation loop?
+## Q [arkitektur, grunder]: Vad är reconciliation loop?
 
-**A:** En kontinuerlig process där en controller jämför desired state (vad du sade i YAML) med actual state (vad som körs) och agerar för att stänga gapet. Detta är **varför** K8s är self-healing - dör en Pod märker controllern att antalet är fel och skapar en ny. Konceptet finns i varje controller (Deployment, ReplicaSet, Service, etc).
+**A:** En controller jämför hela tiden desired state (vad du skrev i YAML) med actual state (vad som körs) och agerar för att stänga gapet. Det är **därför** K8s är self-healing — dör en Pod märker controllern att antalet är fel och skapar en ny.
 
-## Q: Vad gör kubelet på en worker node?
+## Q [arkitektur, grunder]: Vad gör kubelet på en worker node?
 
 **A:** Agent som tar order från API server och kör Pods via container runtimen. Rapporterar tillbaka statusen för noden och alla Pods på den. Utan kubelet är en nod blind - den kan inte ta emot eller köra workloads.
 
-## Q: Varför är etcd kritisk?
+## Q [arkitektur, grunder]: Varför är etcd kritisk?
 
 **A:** etcd lagrar **all** klusterstate - varje Deployment, Service, ConfigMap, Secret, Node. Det är klustrets enda källa till sanning. Förlorar du etcd utan backup måste du bygga om allt manuellt. Backups av etcd är därför obligatoriska i produktion.
 
-## Q: Vad är skillnaden mellan deklarativt och imperativt?
+## Q [arkitektur, grunder]: Vad är skillnaden mellan deklarativt och imperativt?
 
-**A:** Deklarativt = beskriv önskat tillstånd (`apply -f deploy.yaml`), K8s konvergerar dit. Imperativt = säg exakt vad som ska hända (`kubectl run nginx`). Varför viktigt: K8s reconciliation-loop bygger på deklarativt - imperativa kommandon skapar drift mellan vad som finns och vad som är versionerat. I produktion: alltid deklarativt.
+**A:** Deklarativt = beskriv önskat tillstånd (`apply -f deploy.yaml`), K8s tar dig dit. Imperativt = säg exakt vad som ska hända (`kubectl run nginx`). K8s reconciliation bygger på deklarativt — imperativa kommandon skapar drift mot det som ligger i Git. I produktion: alltid deklarativt.
 
-## Q: Vad gör scheduler och vad är dess begränsning?
+## Q [arkitektur, grunder]: Vad gör scheduler och vad är dess begränsning?
 
 **A:** Scheduler bestämmer vilken nod en ny Pod ska köras på baserat på resurskrav, affinity, taints. Begränsning: kan inte schemalägga en Pod om ingen nod har tillräckliga resurser - Podden fastnar då i `Pending`. Vanligaste orsaken till "min Pod startar inte" är att scheduler inte hittar plats.
 
-## Q: Vad är skillnaden mellan API server och etcd?
+## Q [arkitektur, grunder]: Vad är skillnaden mellan API server och etcd?
 
-**A:** API server är gränssnittet - alla requests går genom den, den validerar och autentiserar. etcd är state-lagret - där allt persisteras. Du pratar aldrig direkt med etcd; du går genom API server. Detta lager separerar logik från lagring och gör arkitekturen modulär.
+**A:** API server är gränssnittet — alla requests går genom den, den validerar och autentiserar. etcd är lagret som sparar allt. Du pratar aldrig direkt med etcd, du går alltid via API server.
 
-## Q: Hur kommunicerar control plane och worker nodes?
+## Q [arkitektur, grunder]: Hur kommunicerar control plane och worker nodes?
 
 **A:** kubelet på varje worker pollar API server kontinuerligt: "har du några order åt mig?". Om en Pod ska schemaläggas på noden får kubelet besked, startar den, och rapporterar tillbaka status. All kommunikation går genom API server - workers pratar aldrig direkt med varandra eller med etcd.

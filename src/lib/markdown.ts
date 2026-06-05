@@ -3,6 +3,8 @@ import type {
   HandsOnStep,
   MockExamDifficulty,
   MockExamQuestion,
+  Scenario,
+  YamlQuiz,
 } from "@/types";
 
 const SECTION_NAMES = [
@@ -12,6 +14,8 @@ const SECTION_NAMES = [
   "Hands-on",
   "Lektion hands-on",
   "Flashcards",
+  "YAML-quiz",
+  "Scenarios",
 ] as const;
 
 type SectionName = (typeof SECTION_NAMES)[number];
@@ -90,28 +94,123 @@ function isSectionName(s: string): s is SectionName {
   return (SECTION_NAMES as readonly string[]).includes(s);
 }
 
+const FLASHCARD_HEADING_RE = /^##\s+Q\s*(?:\[([^\]]+)\])?\s*:\s*(.+)$/;
+
 export function parseFlashcards(
   sectionBody: string,
   chapterId: number,
 ): Flashcard[] {
   const cards: Flashcard[] = [];
-  const blocks = splitByH2QuestionMarker(sectionBody, /^##\s+Q:\s*(.+)$/);
+  const blocks = splitByH2QuestionMarker(sectionBody, FLASHCARD_HEADING_RE);
 
   for (const [idx, block] of blocks.entries()) {
     const { heading, body } = block;
-    const qMatch = heading.match(/^##\s+Q:\s*(.+)$/);
+    const qMatch = heading.match(FLASHCARD_HEADING_RE);
     if (!qMatch) continue;
-    const question = (qMatch[1] ?? "").trim();
+    const tagsRaw = qMatch[1] ?? "";
+    const question = (qMatch[2] ?? "").trim();
     const answer = stripAnswerPrefix(body).trim();
     if (!question || !answer) continue;
+    const tags = tagsRaw
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter((t) => t.length > 0);
     cards.push({
       id: `ch${chapterId}-fc-${idx + 1}`,
       chapterId,
       question,
       answer,
+      tags,
     });
   }
   return cards;
+}
+
+export function parseYamlQuizzes(
+  sectionBody: string,
+  chapterId: number,
+): YamlQuiz[] {
+  if (!sectionBody.trim()) return [];
+  const quizzes: YamlQuiz[] = [];
+  const blocks = splitByH2QuestionMarker(sectionBody, /^##\s+(\d+)\.\s+(.+)$/);
+
+  for (const block of blocks) {
+    const m = block.heading.match(/^##\s+(\d+)\.\s+(.+)$/);
+    if (!m) continue;
+    const number = Number(m[1]);
+    const title = (m[2] ?? "").trim();
+    const body = block.body;
+
+    const yamlMatch = body.match(/```yaml\s*\n([\s\S]*?)```/);
+    if (!yamlMatch) continue;
+    const yaml = (yamlMatch[1] ?? "").trim();
+
+    const beforeYaml = body.slice(0, body.indexOf("```yaml")).trim();
+    const afterYaml = body.slice(body.indexOf(yamlMatch[0]) + yamlMatch[0].length);
+
+    const answerMatch = afterYaml.match(/\*\*Svar:\*\*\s*([\s\S]*?)(?=\n\n\*\*Förklaring:\*\*|\Z)/);
+    const explanationMatch = afterYaml.match(/\*\*Förklaring:\*\*\s*([\s\S]*?)$/);
+
+    const answer = (answerMatch?.[1] ?? "").trim();
+    const explanation = (explanationMatch?.[1] ?? "").trim();
+
+    if (!answer) continue;
+
+    quizzes.push({
+      id: `ch${chapterId}-yq-${number}`,
+      chapterId,
+      number,
+      title,
+      description: beforeYaml,
+      yaml,
+      answer,
+      explanation,
+    });
+  }
+  return quizzes.sort((a, b) => a.number - b.number);
+}
+
+export function parseScenarios(
+  sectionBody: string,
+  chapterId: number,
+): Scenario[] {
+  if (!sectionBody.trim()) return [];
+  const scenarios: Scenario[] = [];
+  const blocks = splitByH2QuestionMarker(sectionBody, /^##\s+(\d+)\.\s+(.+)$/);
+
+  for (const block of blocks) {
+    const m = block.heading.match(/^##\s+(\d+)\.\s+(.+)$/);
+    if (!m) continue;
+    const number = Number(m[1]);
+    const title = (m[2] ?? "").trim();
+    const body = block.body;
+
+    const situationMatch = body.match(/\*\*Situation:\*\*\s*([\s\S]*?)(?=\n\n\*\*Fråga|\n\n\*\*Frågor|\n\n\*\*Modellsvar|\Z)/);
+    const questionsMatch = body.match(/\*\*Fr(?:åga|ågor):\*\*\s*([\s\S]*?)(?=\n\n\*\*Modellsvar|\Z)/);
+    const modelMatch = body.match(/\*\*Modellsvar:\*\*\s*([\s\S]*?)$/);
+
+    const situation = (situationMatch?.[1] ?? "").trim();
+    const modelAnswer = (modelMatch?.[1] ?? "").trim();
+    const questionsBlock = (questionsMatch?.[1] ?? "").trim();
+
+    const questions = questionsBlock
+      .split("\n")
+      .map((line) => line.replace(/^[-*\d.)\s]+/, "").trim())
+      .filter((line) => line.length > 0);
+
+    if (!situation || !modelAnswer) continue;
+
+    scenarios.push({
+      id: `ch${chapterId}-sc-${number}`,
+      chapterId,
+      number,
+      title,
+      situation,
+      questions,
+      modelAnswer,
+    });
+  }
+  return scenarios.sort((a, b) => a.number - b.number);
 }
 
 export function parseHandsOnSteps(

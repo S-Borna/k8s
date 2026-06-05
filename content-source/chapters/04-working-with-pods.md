@@ -82,7 +82,7 @@ Standalone Pods används bara för debugging eller engångsjobb.
 
 # Giacomos tillägg
 
-Giacomo betonade att **Pods är immutabla**. Detta är inte en designdetalj — det är **anledningen** till att K8s fungerar. Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Det är basen för rolling updates, rollbacks, och self-healing.
+Giacomo betonade att **Pods är immutabla**. Det är inte en designdetalj — det är **anledningen** till att K8s fungerar. Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Det är grunden för rolling updates, rollbacks och self-healing.
 
 > 💡 Tentarelevant: Containers i samma Pod delar `localhost`. Skriv detta som test på tentan om frågan rör multi-container.
 
@@ -338,50 +338,195 @@ kubectl delete pod multi
 
 # Flashcards
 
-## Q: Vad är en Pod och varför finns den?
+## Q [workloads, pods]: Vad är en Pod och varför finns den?
 
-**A:** Pod är K8s minsta deploybara enhet, ett wrapper runt en eller flera containers som delar nätverk och volumes. Anledningen: möjliggör multi-container-mönster (sidecar, adapter, ambassador) och ger ett konsekvent abstraktionslager för K8s att hantera. Containers själva är för låga; Pods är rätt nivå.
+**A:** Pod är K8s minsta deploybara enhet — ett wrapper runt en eller flera containers som delar nätverk och volumes. Anledningen: gör multi-container-mönster (sidecar, adapter, ambassador) möjliga. Containers ensamma är för låg nivå — Pods är rätt nivå för K8s att hantera.
 
-## Q: Vad delar containers i samma Pod?
+## Q [workloads, pods]: Vad delar containers i samma Pod?
 
 **A:** Nätverks-namespace (samma IP, samma localhost, samma portar), storage volumes (kan dela filer), och lifecycle (startas och stoppas tillsammans). Detta är **anledningen** till att de räknas som en Pod - de är så tätt kopplade att de fungerar som en logisk enhet.
 
-## Q: Varför är Pods immutabla?
+## Q [workloads, pods]: Varför är Pods immutabla?
 
-**A:** Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Detta är basen för rolling updates, rollbacks, och self-healing. Om Pods kunde muteras skulle K8s aldrig kunna garantera att en Pod matchar sin specifikation - reconciliation skulle bli omöjligt.
+**A:** Eftersom Pods inte kan ändras kan K8s alltid återskapa dem från YAML. Det är grunden för rolling updates, rollbacks och self-healing. Kunde Pods muteras skulle K8s aldrig kunna garantera att verkligheten matchar YAML — reconciliation skulle braka.
 
-## Q: Vad är skillnaden mellan liveness och readiness probe?
+## Q [workloads, pods]: Vad är skillnaden mellan liveness och readiness probe?
 
 **A:** Liveness = "körs containern?" - failar den, restartas containern. Readiness = "är containern redo för trafik?" - failar den, tas Podden ut ur Service-rotationen men startas inte om. Liveness fixar trasiga containers; readiness skyddar trafik från containers som inte är redo (t.ex. startar upp eller är överbelastade).
 
-## Q: När kör man Pods direkt utan Deployment?
+## Q [workloads, pods]: När kör man Pods direkt utan Deployment?
 
 **A:** Bara för debugging eller engångsjobb. I produktion alltid via Deployment (eller Job/CronJob för engångsuppgifter). Standalone Pods saknar self-healing - dör Podden är den borta för alltid.
 
-## Q: Vad är ett sidecar-mönster?
+## Q [workloads, pods]: Vad är ett sidecar-mönster?
 
 **A:** En hjälpcontainer i samma Pod som huvudcontainern. Vanligast: logshipper som läser huvudappens loggar och skickar dem till central plats. Andra exempel: service mesh proxy (Istio), config-reloader. Funkar för att containers i samma Pod kan dela volumes och prata via localhost.
 
-## Q: Vad gör `kubectl exec`?
+## Q [workloads, pods]: Vad gör `kubectl exec`?
 
 **A:** Kör ett kommando inuti en körande container, ofta `sh` eller `bash` för interaktiv shell. Användbart för felsökning - du kan kolla filer, processer, nätverk inifrån containern. `-it` för interactive + tty.
 
-## Q: Vilka tillstånd kan en Pod vara i?
+## Q [workloads, pods]: Vilka tillstånd kan en Pod vara i?
 
 **A:** Pending (schemaläggs eller väntar på image), Running (körs), Succeeded (alla containers exited cleanly - för Jobs), Failed (minst en container kraschade), Unknown (kubelet kan inte rapportera, oftast nod nere). Pending som fastnar är vanligaste felet - kolla events med `kubectl describe`.
 
-## Q: Vad är en init-container?
+## Q [workloads, pods]: Vad är en init-container?
 
 **A:** Container som körs **innan** huvudcontainerna i en Pod. Måste exitera framgångsrikt innan main containers startar. Användbart för setup: vänta på databas, migrera schema, ladda ner config. Init-containers körs sekventiellt, main-containers parallellt.
 
-## Q: Varför är labels på Pods kritiska?
+## Q [workloads, pods]: Varför är labels på Pods kritiska?
 
-**A:** Services och Deployments hittar Pods via labels (selectors). Utan rätt labels på Pods skulle Service inte hitta dem och trafik skulle inte routas. Labels är limmet som binder ihop K8s-objekt - de gör loose coupling mellan Pods och konsumenter möjligt.
+**A:** Services och Deployments hittar Pods via labels (selectors). Utan rätt labels hittar Service inte Podden och trafik routas inte. Labels är limmet som binder ihop K8s-objekt — de ger lös koppling mellan Pods och det som använder dem.
 
-## Q: Hur bestämmer man rätt resource requests och limits?
+## Q [workloads, pods]: Hur bestämmer man rätt resource requests och limits?
 
 **A:** Inte gissa - mät. Deploya utan limits initialt, samla metrics under minst ett dygn, basera requests/limits på observerad användning, justera kontinuerligt eftersom laster följer mönster (dygn/vecka/månad/år). För höga requests slösar resurser. För låga limits ger onödiga OOM-killar.
 
-## Q: Vad är emptyDir och när används det?
+## Q [workloads, pods]: Vad är emptyDir och när används det?
 
 **A:** Temporär volym som delar Podens livscykel - skapas när Pod skapas, försvinner när Pod dör. Används för att dela data mellan containers i samma Pod (cache, scratch space, shared files). Inte för persistent data - då behövs PersistentVolume.
+
+# YAML-quiz
+
+## 1. Fyll i Pod-grunderna
+
+Komplettera Pod-manifestet sa det blir giltigt. Fyll i de tre ??? med ratt YAML-falt.
+
+```yaml
+apiVersion: v1
+kind: ???
+metadata:
+  name: hello-pod
+  labels:
+    app: hello
+spec:
+  ???:
+  - name: hello-ctr
+    image: nigelpoulton/k8sbook:1.0
+    ???:
+    - containerPort: 8080
+```
+
+**Svar:** `kind: Pod`, `containers:`, `ports:`
+
+**Förklaring:** En Pod ar kind `Pod`. Listan `containers:` haller en eller flera containers, och `ports:` listar vilka portar containern lyssnar pa. Utan dem kor inte Podden korrekt.
+
+## 2. Hitta felet i multi-container Podden
+
+Studenten deployar manifestet nedan men nginx visar default Welcome-sidan istallet for custom HTML. Vad ar felet?
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi
+spec:
+  volumes:
+  - name: shared
+    emptyDir: {}
+  containers:
+  - name: nginx
+    image: nginx
+    volumeMounts:
+    - name: shared
+      mountPath: /usr/share/nginx/htlm
+```
+
+**Svar:** Typo i `mountPath`: `htlm` ska vara `html`. Nginx hittar inga filer pa ratt path och faller tillbaka pa default-sidan.
+
+**Förklaring:** Det har var precis felsokningsovningen Giacomo korde. Nar mount-pathen ar fel mountar volymen pa fel stalle, nginx servar fortfarande sin default `/usr/share/nginx/html` som ar tom forutom default-paketet. Kolla med `kubectl exec multi -c nginx -- ls /usr/share/nginx/html`.
+
+## 3. Fyll i liveness probe
+
+Komplettera en HTTP liveness probe som kollar `/healthz` pa port 8080.
+
+```yaml
+spec:
+  containers:
+  - name: app
+    image: my-app:1.0
+    ???:
+      httpGet:
+        path: ???
+        port: ???
+      initialDelaySeconds: 5
+      periodSeconds: 10
+```
+
+**Svar:** `livenessProbe:`, `path: /healthz`, `port: 8080`
+
+**Förklaring:** `livenessProbe` ar faltet som triggar restart om containern ar trasig. `httpGet` gor en HTTP-anrop mot pathen och porten. Failar den restartas containern automatiskt av kubelet.
+
+# Scenarios
+
+## 1. Pod fastnar i Pending
+
+**Situation:** Du kor `kubectl apply -f pod.yaml` och Podden fastnar i status **Pending** i flera minuter. `kubectl get pods` visar:
+
+```
+NAME       READY   STATUS    RESTARTS   AGE
+my-pod     0/1     Pending   0          3m
+```
+
+Ingen container startar.
+
+**Frågor:**
+- Vad ar troligaste orsakerna till att en Pod fastnar i Pending?
+- Vilket kommando ger dig svaret pa varfor?
+- Hur fixar du det vanligaste fallet?
+
+**Modellsvar:** **Troligaste orsaker:** Schedulern hittar ingen nod (resource requests for stora, taints/affinity matchar inte), eller image kan inte pullas (fel namn, privat registry utan credentials, Docker Hub rate limit).
+
+**Diagnos:** Kor `kubectl describe pod my-pod` och lus events-sektionen langst ner. Den sager rakt ut t.ex. `FailedScheduling: 0/3 nodes available: insufficient memory` eller `ErrImagePull`.
+
+**Fix:** Image-fel - kolla stavning pa image-namnet och tag. Vid rate limit: kor `docker pull <image>` lokalt forst eller anvand annan registry. Resource-fel: sank `requests` i manifestet eller adda mer kapacitet till noden.
+
+Events ar guld vid felsokning - det var det forsta Giacomo sa pa lektionen.
+
+## 2. Container kraschar i loop med CrashLoopBackOff
+
+**Situation:** Din Pod startar men `kubectl get pods` visar:
+
+```
+NAME    READY   STATUS             RESTARTS   AGE
+app     0/1     CrashLoopBackOff   5          2m
+```
+
+Containern startar, dor, startar igen, dor. Om och om igen.
+
+**Frågor:**
+- Vad betyder CrashLoopBackOff egentligen?
+- Hur tar du reda pa varfor containern dor?
+
+**Modellsvar:** **Vad det betyder:** Kubelet provar starta om containern men den exitar direkt. K8s vantar langre och langre mellan forsoken (backoff). Det ar oftast ett app-fel, inte K8s-fel.
+
+**Diagnos:**
+1. Kor `kubectl logs app` - visar stdout/stderr fran senaste corn. Felet star nastan alltid dar (saknad env-variabel, kan inte na databas, config-syntax-fel).
+2. Om loggar fran levande container ar tomma: `kubectl logs app --previous` - visar loggar fran forra crashen.
+3. `kubectl describe pod app` - kolla exit code och last state.
+
+**Fix:** Beror pa felet. Vanligt: missing env-var (lagg till i manifest), fel image-tag (kor fel version), liveness probe failar for tidigt (oka `initialDelaySeconds`).
+
+## 3. Pod ar Running men far ingen trafik fran Service
+
+**Situation:** Din Pod kor:
+
+```
+NAME    READY   STATUS    RESTARTS   AGE
+app     1/1     Running   0          5m
+```
+
+Men din Service routar inte trafik till den. `curl` mot Servicens ClusterIP ger timeout eller `connection refused`.
+
+**Frågor:**
+- Vad ar troligaste orsaken?
+- Hur diagnostiserar du vidare?
+
+**Modellsvar:** **Troligaste orsak:** Labels matchar inte. Service har en `selector` (t.ex. `app: hello`) och letar Pods med samma label. Stammer inte labels pa Podden hittas den inte och Service har inga endpoints.
+
+**Diagnos:**
+1. `kubectl get endpoints <service-name>` - om `ENDPOINTS` ar tomt eller `<none>` ar det labels-problem.
+2. `kubectl get pods --show-labels` - kolla vilka labels Podden faktiskt har.
+3. `kubectl describe svc <service-name>` - se Service-selectorn.
+
+**Fix:** Andra labels pa Podden sa de matchar Servicens selector, eller andra selectorn. Kom ihag - labels ar limmet mellan Pods och Services, far man dem fel routas ingen trafik.

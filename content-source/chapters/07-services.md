@@ -328,46 +328,199 @@ kubectl delete pod client
 
 # Flashcards
 
-## Q: Varför behövs Services framför Pods?
+## Q [networking, services]: Varför behövs Services framför Pods?
 
-**A:** Pods är efemerala - startar om, byter IP, scalas upp/ned. Klienter kan inte rikta trafik mot Pod-IP eftersom IP försvinner. En Service är en stabil abstraktion med fast ClusterIP + DNS-namn som load-balancerar till matchande Pods via labels. Utan Service ingen meningsfull kommunikation mellan komponenter.
+**A:** Pods är efemerala — de dör, startar om, byter IP. Klienter kan inte ringa direkt på Pod-IP. Service ger ett stabilt namn + IP framför Pods och lastbalanserar till friska Pods via labels.
 
-## Q: Hur hittar Service rätt Pods?
+## Q [networking, services]: Hur hittar Service rätt Pods?
 
-**A:** Via labels. Service har en `selector` med ett antal label-key-value-par. Pods som matchar ALLA dessa labels inkluderas i EndpointSlice. När Service tar emot trafik load-balanceras den till någon av Pods i EndpointSlice. Loose coupling - Service vet inget om specifika Pods, bara labels.
+**A:** Via labels. Service har en `selector` med label-par. Pods som matchar ALLA labels hamnar i EndpointSlice. Service routar trafik till någon av dem. Service vet inget om specifika Pods — bara labels matchar.
 
-## Q: Vad är skillnaden mellan port, targetPort och nodePort?
+## Q [networking, services]: Vad är skillnaden mellan port, targetPort och nodePort?
 
 **A:** `port` = porten Service själv lyssnar på (ClusterIP-port). `targetPort` = porten på Pods (där containern lyssnar). `nodePort` = porten på varje nod (för NodePort-typ, 30000-32767). Olika portar för olika lager - mappning sker automatiskt.
 
-## Q: Vad är skillnaden mellan ClusterIP, NodePort och LoadBalancer?
+## Q [networking, services]: Vad är skillnaden mellan ClusterIP, NodePort och LoadBalancer?
 
 **A:** Bygger på varandra. ClusterIP = bara intern (default). NodePort = ClusterIP + port på varje nod (extern access via nod-IP:port, höga portar). LoadBalancer = NodePort + extern moln-LB med publik IP (låga portar, enklast extern access). Du får alltid lägre lager när du väljer ett högre.
 
-## Q: Vad är ett EndpointSlice?
+## Q [networking, services]: Vad är ett EndpointSlice?
 
 **A:** Live-lista av Pods som matchar en Services selector. Skapas automatiskt när Service skapas. Uppdateras automatiskt när Pods scalas, dör, eller skapas. Service routar trafik till slumpmässig Pod i EndpointSlice (eller via session affinity). Äldre K8s använde "Endpoints" - EndpointSlices är prestanda-optimerade.
 
-## Q: Varför ska man använda DNS istället för IP för Services?
+## Q [networking, services]: Varför ska man använda DNS istället för IP för Services?
 
 **A:** DNS-namn (`my-service`) är stabilt - följer Service-objektet. ClusterIP kan ändras om Service återskapas. Dessutom: DNS gör koden mer läsbar och flyttbar mellan kluster. Hardcodade IP är en anti-pattern.
 
-## Q: Vad är skillnaden mellan `kubectl edit` och `kubectl patch`?
+## Q [networking, services]: Vad är skillnaden mellan `kubectl edit` och `kubectl patch`?
 
-**A:** `edit` öppnar interaktiv editor (vim default) - bra för manuella ändringar. `patch` skickar JSON/YAML-fragment direkt - bra för pipelines, scripts, automation. Patch är programmatisk; edit är interaktiv. Båda gör samma sak underläckt - uppdaterar en resurs.
+**A:** `edit` öppnar interaktiv editor (vim default) — bra vid terminalen. `patch` skickar JSON/YAML direkt — bra för pipelines och scripts (CI/CD). Båda uppdaterar resursen via API server.
 
-## Q: Varför misslyckas Service trots att Pods är "Running"?
+## Q [networking, services]: Varför misslyckas Service trots att Pods är "Running"?
 
 **A:** Vanligaste orsaken: selector matchar inga Pods (typo i labels). EndpointSlice är tomt → ingen trafik routas → connection refused. Andra orsaker: targetPort fel (Pods lyssnar på annan port), readiness probe failar (Pods finns inte i EndpointSlice). `kubectl describe svc <namn>` visar Endpoints - tomt = problem.
 
-## Q: Hur fungerar blue/green deployment med Services?
+## Q [networking, services]: Hur fungerar blue/green deployment med Services?
 
 **A:** Två Deployments (blue + green) med olika labels (t.ex. `version: blue`, `version: green`). En Service med selector som pekar på en av dem. Byt selector → trafiken switchar omedelbart till andra deployment. EndpointSlice uppdateras direkt - noll downtime, ingen request tappad. Smidigt sätt att rolla ut nya versioner med möjlighet till instant rollback.
 
-## Q: Vad är External Traffic Policy?
+## Q [networking, services]: Vad är External Traffic Policy?
 
 **A:** Styr hur extern trafik routas. `Cluster` (default) - LB över alla noder, döljer ursprungs-IP (klienten ses som Service-IP internt). `Local` - bara Pods på ankomst-noden får trafik, ursprungs-IP bevaras. Local används när du behöver veta klientens IP (loggning, rate-limiting). Cluster är bättre för spridning över alla noder.
 
-## Q: Varför hicker Service vid nedskalning?
+## Q [networking, services]: Varför hicker Service vid nedskalning?
 
 **A:** När en Pod tas ner kan en pågående request routas till den terminerande Podden innan EndpointSlice hunnit uppdateras. Klienten får en error. I produktion löses detta med graceful shutdown - preStop hooks + tid för Podden att avsluta pågående requests innan SIGTERM. Det är därför `terminationGracePeriodSeconds` finns.
+
+# YAML-quiz
+
+## 1. ClusterIP Service med selector
+
+Fyll i de saknade fälten så att Servicen exponerar Pods med label `app: web` på port 80 och skickar trafiken till containerns port 8080.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: ???
+  selector:
+    app: ???
+  ports:
+  - port: 80
+    targetPort: ???
+```
+
+**Svar:** `type: ClusterIP`, `app: web`, `targetPort: 8080`. ClusterIP är default-typen och funkar internt i klustret. Selector matchar Pods med `app: web`, och `targetPort` ska peka på porten containern lyssnar på.
+
+**Förklaring:** `port` är porten Servicen själv lyssnar på, `targetPort` är porten i containern. Selector matchar labels på Pods — fel label = tom EndpointSlice = trasig service.
+
+## 2. NodePort med fast port
+
+Du vill exponera Servicen externt via en specifik port på varje nod. Fyll i typen och nodePort så det funkar.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  type: ???
+  selector:
+    app: api
+  ports:
+  - port: 8080
+    targetPort: 9000
+    nodePort: ???
+```
+
+**Svar:** `type: NodePort` och `nodePort` måste vara i intervallet `30000-32767` (t.ex. `30050`). Lägre portar tillåts inte för NodePort.
+
+**Förklaring:** NodePort öppnar en port på VARJE nod. Intervallet 30000-32767 är K8s default-range. Om du utelämnar `nodePort` slumpar K8s en åt dig.
+
+## 3. Hitta felet — selector matchar inte
+
+Servicen ger `connection refused` trots att alla Pods är `Running`. Vad är fel i YAMLen?
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+        version: v1
+    spec:
+      containers:
+      - name: web
+        image: nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-svc
+spec:
+  selector:
+    app: web
+    version: v2
+  ports:
+  - port: 80
+    targetPort: 80
+```
+
+**Svar:** Service-selectorn har `version: v2` men Pods har `version: v1`. Selector måste matcha ALLA labels — annars är EndpointSlice tomt. Fix: ändra till `version: v1` eller ta bort version-raden ur selectorn.
+
+**Förklaring:** En Service routar bara trafik till Pods där alla selector-labels matchar. Verifiera med `kubectl describe svc web-svc` — om `Endpoints: <none>` är selectorn fel.
+
+# Scenarios
+
+## 1. Tom EndpointSlice efter deploy
+
+**Situation:** Du har deployat en ny app. Pods är `Running` och Deployments visar 3/3 ready. Men när du kör `curl web-service` från en test-pod får du `connection refused`. `kubectl describe svc web-service` visar `Endpoints: <none>`.
+
+**Frågor:**
+- Vad är troligaste orsaken?
+- Vilket kommando använder du för att bekräfta?
+- Hur fixar du?
+
+**Modellsvar:** **Orsak:** Service-selectorn matchar inga Pods. Vanligaste felet: typo i label eller fel label-key. EndpointSlice är tom = ingen trafik routas.
+
+**Diagnos:**
+
+1. Kolla Service-selectorn: `kubectl get svc web-service -o yaml | grep -A3 selector`
+2. Kolla Pod-labels: `kubectl get pods --show-labels`
+3. Jämför — matchar alla labels exakt?
+
+**Fix:** Patcha Servicen så selector matchar Pod-labels:
+
+```bash
+kubectl patch service web-service -p '{"spec":{"selector":{"app":"web"}}}'
+```
+
+Kör `kubectl describe svc web-service` igen — `Endpoints:` ska nu lista Pod-IP:ar.
+
+## 2. LoadBalancer fastnar på pending
+
+**Situation:** Du kör `kubectl expose deployment web --type=LoadBalancer --port=80`. Service skapas men `kubectl get svc web` visar `EXTERNAL-IP   <pending>` och det rör sig inte på flera minuter. Andra LoadBalancer-services i klustret har redan externa IP:ar.
+
+**Frågor:**
+- Vad är troligaste orsaken i labb-klustret?
+- Hur fixar du tillfälligt?
+
+**Modellsvar:** **Orsak:** Labb-klustret har bara ~4 publika IP:ar (en per nod). När alla är tagna fastnar nya LoadBalancer-services på `<pending>`. Detta är inte ditt fel — det är resursbrist.
+
+**Diagnos:** `kubectl get svc -A | grep LoadBalancer` visar hur många som redan har externa IP:ar.
+
+**Fix (Giacomos regel):** Exponera inte i onödan. Patcha tillbaka till ClusterIP när du testat klart så någon annan får IP:n:
+
+```bash
+kubectl patch service web -p '{"spec":{"type":"ClusterIP"}}'
+```
+
+Kör lokalt eller via NodePort + nod-IP om du behöver extern access utan att vänta.
+
+## 3. Hicka vid nedskalning
+
+**Situation:** Du skalar ner en Deployment från 12 till 2 replikor. Klienten som kört curl-loop mot servicen får några `connection reset` mitt under nedskalningen. Sedan stabiliseras allt igen.
+
+**Frågor:**
+- Vad orsakar hickan?
+- Hur löser man det i produktion?
+
+**Modellsvar:** **Orsak:** När en Pod tas ner kan en pågående request routas till den terminerande Podden INNAN EndpointSlice hunnit uppdateras. Klienten får då en error — Pod stänger ner mitt i requesten.
+
+**Diagnos:** Kolla att det handlar om terminating-pods: `kubectl get pods -w` under nedskalning visar Pods i `Terminating`.
+
+**Fix i produktion:**
+
+1. **preStop hook** — kör en `sleep 10` så Podden stannar i Terminating några sekunder innan SIGTERM. Då hinner EndpointSlice uppdatera.
+2. **terminationGracePeriodSeconds** — sätt tid (default 30s) för Podden att avsluta pågående requests.
+3. **Graceful shutdown i appen** — appen ska sluta ta nya requests men slutföra pågående när SIGTERM kommer.

@@ -1,4 +1,4 @@
-import { BookOpen, GraduationCap, Layers, Settings } from "lucide-react";
+import { BookOpen, GraduationCap, Layers, Network, Settings, Terminal, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type NavItem = {
@@ -10,7 +10,10 @@ export type NavItem = {
 
 export const navItems: NavItem[] = [
   { to: "/", label: "Översikt", shortLabel: "Hem", icon: Layers },
+  { to: "/plugga", label: "Plugga nu", shortLabel: "Plugga", icon: Zap },
   { to: "/flashcards", label: "Flashcards", shortLabel: "Kort", icon: BookOpen },
   { to: "/mock-tenta", label: "Tenta", shortLabel: "Tenta", icon: GraduationCap },
+  { to: "/cheatsheet", label: "Cheatsheet", shortLabel: "CLI", icon: Terminal },
+  { to: "/arkitektur", label: "Arkitektur", shortLabel: "Karta", icon: Network },
   { to: "/installningar", label: "Inställningar", shortLabel: "Mer", icon: Settings },
 ];

@@ -387,46 +387,46 @@ Förväntat: Alla 5 checks PASS. "LAB COMPLETE".
 
 # Flashcards
 
-## Q: Vad är service discovery i K8s?
+## Q [networking, dns]: Vad är service discovery i K8s?
 
-**A:** Mekanismen för hur appar hittar varandra i klustret. Containers känner namn (`payments`) men behöver IP. K8s gör översättningen automatiskt via cluster-DNS. Utan service discovery skulle appar behöva hårdkoda IP, vilket bryter när Pods byter IP eller scalas.
+**A:** Sättet appar hittar varandra i klustret. Containers vet namn (`payments`) men behöver IP — K8s översätter automatiskt via cluster-DNS. Utan det skulle appar behöva hårdkoda IP, vilket bryter direkt när Pods byter IP.
 
-## Q: Vad är coredns?
+## Q [networking, dns]: Vad är coredns?
 
-**A:** K8s inbyggda DNS-server. Körs som Pods i `kube-system` namespace, fronted av en Service kallad `kube-dns`. Bevakar API server för nya Services och registrerar dem automatiskt. När en container gör DNS-lookup går request till coredns som svarar med Service ClusterIP.
+**A:** K8s inbyggda DNS-server. Körs som Pods i `kube-system`, frontas av en Service som heter `kube-dns`. Bevakar API server för nya Services och registrerar dem automatiskt. Container-DNS-lookup går till coredns, som svarar med ClusterIP.
 
-## Q: Vad är skillnaden mellan kort namn och FQDN?
+## Q [networking, dns]: Vad är skillnaden mellan kort namn och FQDN?
 
 **A:** Kort namn (`payments`) kräver search domains i `/etc/resolv.conf` för att resolva. FQDN (`payments.finance.svc.cluster.local`) är fullständigt namn, inga genvägar. Korta namn funkar bara i samma namespace (lokalt). Cross-namespace kräver FQDN. FQDN är säkrare i scripts - inga gissningar.
 
-## Q: Vad gör `dnsPolicy: ClusterFirst`?
+## Q [networking, dns]: Vad gör `dnsPolicy: ClusterFirst`?
 
 **A:** Default för Pods. Konfigurerar `/etc/resolv.conf` automatiskt med cluster-DNS som primär nameserver och search domains för lokala namespacet. Detta är vad du vill 99% av tiden - utan det funkar inte service discovery.
 
-## Q: Vad gör `dnsPolicy: None`?
+## Q [networking, dns]: Vad gör `dnsPolicy: None`?
 
 **A:** Stänger av all automatisk DNS-konfiguration. Du måste själv ange `dnsConfig` med nameservers, searches, options. Använd när du behöver custom DNS (t.ex. peka mot extern DNS-server). Sällsynt - om du sätter None av misstag bryts service discovery helt.
 
-## Q: Hur fungerar ClusterIP routing tekniskt?
+## Q [networking, dns]: Hur fungerar ClusterIP routing tekniskt?
 
 **A:** ClusterIP är inte en riktig IP - det finns inga routes dit. När Pod skickar trafik till ClusterIP går den mot default gateway. På noden interceptar kerneln paketet via iptables/IPVS-regler som kube-proxy har konfigurerat. Reglerna översätter ClusterIP till en frisk Pod-IP via DNAT. Trafiken når Pod transparent.
 
-## Q: Vad är kube-proxy och vad gör den?
+## Q [networking, dns]: Vad är kube-proxy och vad gör den?
 
 **A:** En Pod på varje nod som konfigurerar nätverksregler för Services. Bevakar API server för Service och Endpoint-ändringar. Skapar/uppdaterar iptables eller IPVS-regler så att ClusterIP-trafik routas till rätt Pod-IPs. Utan kube-proxy fungerar inte Services - trafik når aldrig Pods.
 
-## Q: Vad är `/etc/resolv.conf` i en Pod?
+## Q [networking, dns]: Vad är `/etc/resolv.conf` i en Pod?
 
 **A:** Standard Linux DNS-config-fil. K8s konfigurerar den automatiskt: `nameserver` pekar på cluster-DNS-IP, `search` listar domäner som appendas till korta namn (default-namespace först), `options ndots:5` styr när search domains används. Ändringar bör göras via Pod-spec (`dnsPolicy`, `dnsConfig`), inte manuellt i filen.
 
-## Q: Hur felsöker man trasig service discovery?
+## Q [networking, dns]: Hur felsöker man trasig service discovery?
 
 **A:** 1) Kolla att coredns-Pods kör (`kubectl get pods -n kube-system -l k8s-app=kube-dns`). 2) Kolla logs (`kubectl logs <coredns-pod> -n kube-system`). 3) Kör testpod med dnsutils, kör `nslookup kubernetes` (ska resolva). 4) Kolla `/etc/resolv.conf` i Pod - rätt nameserver? Rätt search domains? 5) Verifiera Service exists och har EndpointSlice med Pods. 6) Som sista utväg - radera coredns-Pods, de återskapas.
 
-## Q: Varför ska man använda FQDN i produktionskod?
+## Q [networking, dns]: Varför ska man använda FQDN i produktionskod?
 
-**A:** Inga gissningar - rätt Service hittas alltid oavsett vilken namespace caller är i. Korta namn är bekväma för utveckling men fragila - en typo i namespace-config bryter dem. FQDN är explicit och self-documenting. Också: korta namn med fel search domains kan resolva till fel Service (samma namn i annat namespace).
+**A:** Inga gissningar — rätt Service hittas alltid oavsett vilket namespace caller ligger i. Korta namn är bekväma men sköra: en typo i namespace-config bryter dem. FQDN är explicit. Och: korta namn med fel search domains kan resolva till fel Service (samma namn i annat namespace).
 
-## Q: Sammanfatta lösningen på service discovery-labben.
+## Q [networking, dns]: Sammanfatta lösningen på service discovery-labben.
 
 **A:** Tre fel i jump-podden: (1) `dnsPolicy: None` stängde av automatisk DNS — fix: ändra till `ClusterFirst`. (2) `nameservers: 8.8.8.8` — Google DNS kan inte resolva interna services — fix: ta bort, behåll bara extra search domain för `default.svc.cluster.local` (för check 1). (3) `PAYMENTS_HOST: payments` — kort namn cross-namespace funkar inte — fix: FQDN `payments.finance.svc.cluster.local`. Inga genvägar cross-namespace.

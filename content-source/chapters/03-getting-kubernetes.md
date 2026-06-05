@@ -292,38 +292,38 @@ kubectl delete namespace testing
 
 # Flashcards
 
-## Q: Vad är skillnaden mellan kind och minikube?
+## Q [cli, grunder]: Vad är skillnaden mellan kind och minikube?
 
-**A:** kind kör K8s-noder som Docker-containers - snabbt och kan simulera flernod-kluster. minikube kör K8s i en VM - långsammare men mer "verklig" miljö. För utbildning: kind är vanligare 2026. För testning av nätverk/storage som påminner om produktion: minikube ibland bättre.
+**A:** kind kör K8s-noder som Docker-containers — snabbt och kan simulera flernod-kluster. minikube kör K8s i en VM — långsammare men närmare en riktig server. För utbildning är kind vanligast.
 
-## Q: Vad gör Docker Desktop's inbyggda K8s?
+## Q [cli, grunder]: Vad gör Docker Desktop's inbyggda K8s?
 
 **A:** Ger dig ett en-nod K8s-kluster på Mac/Windows utan extra installation. Aktiveras via Settings. Bra för lärande och utveckling, men kan inte simulera multi-node-scenarier som kind kan.
 
-## Q: Vad är ett "kontext" i kubectl?
+## Q [cli, grunder]: Vad är ett "kontext" i kubectl?
 
-**A:** En sparad kombination av kluster + användare + namespace i `~/.kube/config`. Med kontexter kan du ha flera kluster (dev, staging, prod) och växla mellan dem med ett kommando: `kubectl config use-context prod`. Att ha tydlig prompt med aktivt kontext är säkerhetskritiskt - annars kan du av misstag köra destruktiva kommandon i fel kluster.
+**A:** En sparad kombination av kluster + användare + namespace i `~/.kube/config`. Du växlar mellan dev/staging/prod med `kubectl config use-context prod`. Visa alltid aktivt kontext i prompten — annars kan du råka köra `delete` mot prod.
 
-## Q: Vad är CNI och varför finns det?
+## Q [cli, grunder]: Vad är CNI och varför finns det?
 
-**A:** Container Network Interface. En pluggable abstraktion för nätverket mellan Pods. K8s själv definierar inte hur Pods pratar med varandra - den delegerar till en CNI-plugin (Calico, Flannel, Cilium). Olika CNI:er har olika egenskaper: vissa stöttar NetworkPolicies, andra är snabbare, andra integrerar med moln-nätverk.
+**A:** Container Network Interface — pluggar in nätverket mellan Pods. K8s bestämmer inte själv hur Pods pratar med varandra, utan lämnar över till en CNI-plugin (Calico, Flannel, Cilium). Olika CNI:er kan olika saker — vissa stöttar NetworkPolicies, andra är snabbare, andra integrerar med molnets nätverk.
 
-## Q: Vad är skillnaden mellan managed och självhostat K8s?
+## Q [cli, grunder]: Vad är skillnaden mellan managed och självhostat K8s?
 
 **A:** Managed (EKS/AKS/GKE): molnleverantören driftar control plane (etcd, API server, scheduler). Du ansvarar bara för workloads. Självhostat: du driftar allt själv. Managed är snabbare att komma igång och säkrare - men dyrare och med viss vendor lock-in. Självhostat är billigare i längden men kräver plattformsteam.
 
-## Q: Var ligger kubectl-konfigurationen?
+## Q [cli, grunder]: Var ligger kubectl-konfigurationen?
 
 **A:** `~/.kube/config` per default. Filen kan ha flera "contexts" - kombinationer av kluster, användare, och default-namespace. Du kan peka kubectl till annan fil med `KUBECONFIG`-miljövariabeln eller `--kubeconfig`-flaggan.
 
-## Q: Vad är k3s och när används det?
+## Q [cli, grunder]: Vad är k3s och när används det?
 
 **A:** En lättviktig K8s-distribution från Rancher. ~50MB binär, körs som en enda process, inkluderar default storage och networking. Designad för IoT, edge computing, och utveckling. Giacomos labbkluster körde k3s.
 
-## Q: Varför ger port-forward INTE riktig lastbalansering?
+## Q [cli, grunder]: Varför ger port-forward INTE riktig lastbalansering?
 
-**A:** `kubectl port-forward` skapar en tunnel direkt till EN specifik Pod, inte till Service. All trafik går till samma Pod. För riktig lastbalansering måste trafiken gå genom Service - vilket kräver att klienten är i klustret (eller att Service exponeras via NodePort/LoadBalancer/Ingress). Port-forward är för debugging, inte testing av lastbalansering.
+**A:** `kubectl port-forward` öppnar en tunnel direkt till EN Pod — inte till Service. All trafik landar på samma Pod. Vill du se lastbalansering måste trafiken gå genom Service inifrån klustret, eller via NodePort/LoadBalancer/Ingress utifrån. Port-forward är för debugging, inte lastbalansering.
 
-## Q: Hur felsöker man en Pod som hamnar i ErrImagePull?
+## Q [cli, grunder]: Hur felsöker man en Pod som hamnar i ErrImagePull?
 
 **A:** `kubectl describe pod <namn>` och titta i Events-sektionen längst ner. Där står det exakta felet — vanligast: typo i image-namnet, image finns inte i registry, autentisering mot privat registry saknas, eller Docker Hub rate limiting. Events är **det första** man alltid kollar vid Pod-problem.

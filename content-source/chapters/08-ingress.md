@@ -393,46 +393,189 @@ sudo vi /etc/hosts    # Ta bort tillagda rader
 
 # Flashcards
 
-## Q: Vad är skillnaden mellan Service och Ingress?
+## Q [networking, ingress]: Vad är skillnaden mellan Service och Ingress?
 
-**A:** Service jobbar på Layer 4 (TCP/UDP) och routar baserat på IP/port. Ingress jobbar på Layer 7 (HTTP) och routar baserat på hostname och path. Ingress är ovanpå Services - varje Ingress-regel pekar på en backend Service. Service exponerar EN tjänst; Ingress kan exponera MÅNGA tjänster bakom en LB.
+**A:** Service jobbar på Layer 4 — routar via IP/port. Ingress jobbar på Layer 7 (HTTP) — routar via hostname och path. Ingress ligger ovanpå Services; varje regel pekar på en ClusterIP Service. En Service = en tjänst. En Ingress = många tjänster bakom EN load balancer.
 
-## Q: Varför har K8s inte inbyggd Ingress controller?
+## Q [networking, ingress]: Varför har K8s inte inbyggd Ingress controller?
 
-**A:** Designprincip - K8s definierar API:t, marknaden levererar implementationer. Olika controllers har olika styrkor: NGINX (mogen, mest använd), Traefik (lätt config, autodiscovery), HAProxy (snabb), Istio (service mesh). Genom att hålla det pluggable kan användare välja det som passar.
+**A:** Designval — K8s definierar API:t, marknaden bygger implementationerna. Du väljer själv: NGINX, Traefik, HAProxy, Istio. Olika styrkor för olika behov.
 
-## Q: Vad gör en Ingress controller?
+## Q [networking, ingress]: Vad gör en Ingress controller?
 
-**A:** Lyssnar på Ingress-objekt via API server. Konfigurerar sin underliggande proxy (NGINX, Traefik) baserat på dem. När request kommer in läser den HTTP-headers (Host, path) och routar till rätt backend Service. Allt sker i Pod(s) i klustret.
+**A:** Den körs som Pod i klustret och lyssnar på Ingress-objekt via API server. När en request kommer in läser den HTTP-headers (Host, path) och routar till rätt backend Service.
 
-## Q: Vad är `ingressClassName` och varför finns det?
+## Q [networking, ingress]: Vad är `ingressClassName` och varför finns det?
 
 **A:** Anger vilken Ingress controller som ska hantera detta Ingress-objekt. Behövs när flera controllers körs på samma kluster (t.ex. nginx för publik, traefik för intern). Utan det väljs default IngressClass.
 
-## Q: Vad är skillnaden mellan host-baserad och path-baserad routing?
+## Q [networking, ingress]: Vad är skillnaden mellan host-baserad och path-baserad routing?
 
 **A:** Host-baserad: olika hostnames (shield.mcu.com, hydra.mcu.com) → olika Services. Kräver att DNS pekar alla hostnames till samma LB-IP. Path-baserad: samma hostname (mcu.com), olika paths (/shield, /hydra) → olika Services. Enklare DNS men kräver path-rewriting för att appen ska se rätt path.
 
-## Q: Vad är `rewrite-target` annotation?
+## Q [networking, ingress]: Vad är `rewrite-target` annotation?
 
-**A:** NGINX-specifik annotation som skriver om path innan request når backend. T.ex. mcu.com/shield → "/". Utan rewrite skulle appen se "/shield" och kanske inte ha den routen. Annotations är hur Ingress passar specifik konfiguration till sin controller - de är icke-standardiserade och varierar per controller.
+**A:** NGINX-specifik annotation som skriver om path innan requesten når backend. T.ex. mcu.com/shield → "/". Utan rewrite ser appen "/shield" och hittar kanske inte routen. Annotations är controller-specifika — varje controller har sina egna.
 
-## Q: Vad är fördelen med Ingress över LoadBalancer-Service?
+## Q [networking, ingress]: Vad är fördelen med Ingress över LoadBalancer-Service?
 
-**A:** En LB istället för många - billigare och enklare. Hostname/path-baserad routing - flexibelt för många microservices. Centralized TLS termination - certifikat hanteras på ett ställe. Authentication/rate limiting kan göras i controllern. För 25 appar: 1 Ingress + 1 LB istället för 25 LoadBalancer-Services.
+**A:** En load balancer istället för många — billigare och enklare. Host/path-routing för många appar. TLS-certifikat hanteras på ett ställe. För 25 appar: 1 Ingress + 1 LB istället för 25 LoadBalancer-Services.
 
-## Q: Stödjer Ingress andra protokoll än HTTP?
+## Q [networking, ingress]: Stödjer Ingress andra protokoll än HTTP?
 
-**A:** Nej, bara HTTP/HTTPS. För TCP/UDP behövs andra lösningar: NGINX TCP/UDP services, Service med type=LoadBalancer, eller Gateway API (nyare standard). Ingress är specifikt designat för HTTP-routing - andra protokoll har andra mekanismer.
+**A:** Nej, bara HTTP/HTTPS. För TCP/UDP behövs annat: LoadBalancer-Service eller Gateway API. Ingress är gjord för HTTP-routing.
 
-## Q: Hur hanterar Ingress TLS?
+## Q [networking, ingress]: Hur hanterar Ingress TLS?
 
-**A:** Certifikat lagras som K8s Secrets (type=kubernetes.io/tls). I Ingress-spec refererar man till secret-namnet under `tls:`. Ingress controller läser certet och terminerar TLS - backend Services pratar HTTP. Med cert-manager + Let's Encrypt kan certifikat genereras och rotateras automatiskt.
+**A:** Certifikat lagras som Secrets (type=kubernetes.io/tls). Ingress refererar secret-namnet under `tls:`. Controllern terminerar TLS — backend pratar vanlig HTTP. Med cert-manager + Let's Encrypt sköts utfärdning och rotation automatiskt.
 
-## Q: Vad är skillnaden mellan Traefik och NGINX som Ingress controller?
+## Q [networking, ingress]: Vad är skillnaden mellan Traefik och NGINX som Ingress controller?
 
-**A:** NGINX: mogen, performant, stort community, traditionell config. **NGINX Ingress controller är arkiverad sedan 2025** - inga uppdateringar. Traefik: modern, autodiscovery av Services, smidig TLS-hantering, dashboard inbyggd. Funktionalitet är likvärdig - syntax på annotations skiljer. Labbklustret kör Traefik. Gateway API är framtiden.
+**A:** NGINX: mogen, mest använd, traditionell config. **NGINX Ingress controller är arkiverad sedan 2025** — inga uppdateringar. Traefik: modern, autodiscovery, inbyggd dashboard. Funktionellt likvärdiga — annotations skiljer i syntax. Labbklustret kör Traefik. Gateway API är framtiden.
 
-## Q: Vad är cert-manager?
+## Q [networking, ingress]: Vad är cert-manager?
 
 **A:** K8s-controller som hanterar TLS-certifikat som K8s-resurser (`kind: Certificate`). Integrerar med Let's Encrypt för automatisk cert-utfärdning och rotation. Certifikat lagras som Secrets, refereras från Ingress. Standardlösningen för TLS i K8s 2026.
+
+# YAML-quiz
+
+## 1. Host-baserad Ingress
+
+Fyll i blanksen sa att requests till `shop.mcu.com` routas till Service `svc-shop` pa port 80. Vilken controller som hanterar regeln ska vara `nginx`.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shop-ingress
+spec:
+  ???: nginx
+  rules:
+  - host: ???
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ???
+            port:
+              number: 80
+```
+
+**Svar:** `ingressClassName: nginx`, `host: shop.mcu.com`, `name: svc-shop`
+
+**Förklaring:** `ingressClassName` bestammer vilken Ingress controller som ska plocka upp regeln. `host` matchar mot HTTP Host-headern. `name` pekar pa en befintlig ClusterIP Service som faktiskt kor podsen.
+
+## 2. Hitta felet i Ingress-backend
+
+Den har Ingressen applyas utan fel men trafiken fungerar inte. Hitta felet i YAMLen.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ing
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: api.mcu.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: svc-api
+            port: 8080
+```
+
+**Svar:** `port: 8080` ar fel format. Det ska vara `port:` med ett nestat `number: 8080` (eller `name: <port-namn>`).
+
+**Förklaring:** I `networking.k8s.io/v1` ar backend-porten ett objekt, inte en siffra direkt. Skriv `port:` pa egen rad och `number: 8080` indenterat under. Annars kommer Ingress controllern inte hitta nagon backend och du far 503/404.
+
+## 3. Path-baserad routing
+
+Fyll i sa att `mcu.com/blog` gar till `svc-blog:80` och `mcu.com/api` gar till `svc-api:80` via samma host.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcu-paths
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: mcu.com
+    http:
+      paths:
+      - path: /blog
+        pathType: ???
+        backend:
+          service:
+            name: svc-blog
+            port:
+              number: 80
+      - path: ???
+        pathType: Prefix
+        backend:
+          service:
+            name: ???
+            port:
+              number: 80
+```
+
+**Svar:** `pathType: Prefix`, `path: /api`, `name: svc-api`
+
+**Förklaring:** `Prefix` matchar alla URLer som borjar med pathen, sa `/blog/post1` traffar ocksa svc-blog. Bada paths ligger under samma `host`-block eftersom det ar samma domain. Tank pa att appen bakom kanske behover `rewrite-target`-annotation om den inte kan hantera `/blog`-prefixet.
+
+# Scenarios
+
+## 1. Ingress ger 404 pa allt
+
+**Situation:** Du har applyat din Ingress och Services. `kubectl get ing web` visar en ADDRESS-IP. Du kor `curl http://<lb-ip>` och far `404 page not found` fran Traefik. Bade `svc-shield` och `svc-hydra` Pods ar Running.
+
+**Frågor:**
+- Vad ar troligaste orsaken?
+- Hur testar du att Ingressen i sig fungerar?
+
+**Modellsvar:** **Troligaste orsaken:** Du saknar Host-header. Ingress controllern routar pa hostname, men `curl http://<lb-ip>` skickar inget matchande host-varde, sa controllern hittar ingen regel och svarar 404.
+
+**Diagnos:** Kor `curl -H "Host: shield.mcu.com" http://<lb-ip>`. Far du svar fran appen vet du att Ingressen funkar — det ar bara Host-headern som saknades.
+
+**Fix:** Lagg LB-IPn i `/etc/hosts` med ratt hostname, eller anvand `-H "Host: ..."` i curl. I produktion satter du DNS-record som pekar `shield.mcu.com` mot LB-IPn.
+
+## 2. Ingress saknar ADDRESS
+
+**Situation:** Du har installerat NGINX Ingress controller och applyat din Ingress. `kubectl get ing mcu-all` visar:
+
+```
+NAME      CLASS    HOSTS          ADDRESS   PORTS   AGE
+mcu-all   <none>   shield.mcu.com           80      2m
+```
+
+ADDRESS-faltet ar tomt.
+
+**Frågor:**
+- Vad ar troligaste orsaken?
+- Hur fixar du det?
+
+**Modellsvar:** **Troligaste orsaken:** `CLASS` ar `<none>`. Din Ingress har ingen `ingressClassName` satt, sa ingen controller plockar upp den. Darfor far den heller ingen ADDRESS.
+
+**Diagnos:** Kor `kubectl get ingressclass` och kolla vad classerna heter. Ofta ar det `nginx` eller `traefik`. Kor `kubectl describe ing mcu-all` for att se om det finns events.
+
+**Fix:** Lagg till `ingressClassName: nginx` (eller vad nu klassen heter) under `spec:` i din Ingress YAML, kor `kubectl apply -f ig-all.yml` igen, vanta nagra sekunder och kolla `kubectl get ing` — ADDRESS ska dyka upp.
+
+## 3. Path-baserad routing ger fel route i appen
+
+**Situation:** Din Ingress routar `mcu.com/shield` till svc-shield. Du curlar `http://mcu.com/shield` och far `404` fran *appen* (inte fran Ingress). Appen serverar `/` men inte `/shield`.
+
+**Frågor:**
+- Vad ar troligaste orsaken?
+- Hur fixar du det?
+
+**Modellsvar:** **Troligaste orsaken:** Ingressen skickar pathen `/shield` vidare till backend som det ar, men appen lyssnar bara pa `/`. Du behover skriva om pathen innan den nar appen.
+
+**Diagnos:** Kolla appens loggar med `kubectl logs <pod>` — du ser troligen att den fick request mot `/shield` och svarade 404. Det bekraftar att trafiken kommer fram, men pa fel path.
+
+**Fix:** Lagg till annotation `nginx.ingress.kubernetes.io/rewrite-target: /` i Ingress metadata. Den skriver om `/shield` till `/` innan den traffar appen. Pa Traefik anvander du `traefik.ingress.kubernetes.io/router.middlewares` med en StripPrefix-middleware istallet — varje controller har sin egen syntax.

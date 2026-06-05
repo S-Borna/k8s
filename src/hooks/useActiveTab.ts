@@ -1,6 +1,21 @@
 import { useSearchParams } from "react-router-dom";
 
-export type TabKey = "summary" | "flashcards" | "handson" | "lecture";
+export type TabKey =
+  | "summary"
+  | "flashcards"
+  | "handson"
+  | "lecture"
+  | "yaml"
+  | "scenarios";
+
+const TAB_KEYS: TabKey[] = [
+  "summary",
+  "flashcards",
+  "handson",
+  "lecture",
+  "yaml",
+  "scenarios",
+];
 
 export function useActiveTab(
   defaultTab: TabKey = "summary",
@@ -17,5 +32,5 @@ export function useActiveTab(
 }
 
 function isTabKey(s: string | null): s is TabKey {
-  return s === "summary" || s === "flashcards" || s === "handson" || s === "lecture";
+  return s !== null && (TAB_KEYS as string[]).includes(s);
 }

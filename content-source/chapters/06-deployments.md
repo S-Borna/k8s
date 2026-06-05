@@ -300,6 +300,8 @@ kubectl apply -f deploy.yaml
 kubectl rollout status deployment/web
 ```
 
+Förväntat: 20 Pods ready.
+
 Triggera rolling update:
 ```bash
 kubectl set image deployment/web nginx=nginx:1.26
@@ -307,7 +309,9 @@ kubectl annotate deployment/web kubernetes.io/change-cause="version 2" --overwri
 kubectl rollout status deployment/web    # ~2 min
 ```
 
-Ändra till `maxSurge: 5` och uppdatera igen — märk skillnaden i hastighet.
+Förväntat: Pods byts stegvis, alltid 20 ready.
+
+Ändra till `maxSurge: 5` och uppdatera igen — märk skillnaden i hastighet (~35 sek istället för ~2 min).
 
 ## 2. Broken deployment (readiness probe-mismatch)
 
@@ -329,10 +333,14 @@ kubectl get pods    # 0/1 Ready, fastnar
 kubectl rollout status deployment/web    # timeout
 ```
 
+Förväntat: Nya Pods kör men blir aldrig ready. Gamla Pods tas inte ner — inget downtime.
+
 Rollback:
 ```bash
 kubectl rollout undo deployment/web
 ```
+
+Förväntat: Tillbaka till förra revision direkt.
 
 ## 3. Rollout history med change-cause
 
@@ -340,7 +348,7 @@ kubectl rollout undo deployment/web
 kubectl rollout history deployment/web
 ```
 
-Förväntat: Lista med revisioner och change-cause-text bredvid varje. Annoteringen följer med i historiken.
+Förväntat: Lista med revisioner och change-cause-text bredvid varje.
 
 ## 4. Cleanup
 
@@ -348,44 +356,209 @@ Förväntat: Lista med revisioner och change-cause-text bredvid varje. Annoterin
 kubectl delete deployment/web
 ```
 
+Förväntat: Deployment och alla Pods borta.
+
 # Flashcards
 
-## Q: Vad är skillnaden mellan Deployment, ReplicaSet och Pod?
+## Q [workloads, deployments]: Vad är skillnaden mellan Deployment, ReplicaSet och Pod?
 
 **A:** Deployment är det du interagerar med - definierar antal replikor, image, update-strategi. ReplicaSet skapas automatiskt av Deployment och hanterar self-healing/skalning - editera den aldrig direkt. Pods är slutprodukten - skapas av ReplicaSet och kör dina containers. Hierarki: Deployment → ReplicaSet → Pods.
 
-## Q: Vad gör maxSurge och maxUnavailable?
+## Q [workloads, deployments]: Vad gör maxSurge och maxUnavailable?
 
-**A:** Vid rolling update: `maxSurge` = max antal Pods OVER desired (kan vara nummer eller procent). `maxUnavailable` = max antal Pods UNDER desired. Tillsammans styr de hur snabbt rolloutsker. maxSurge=1, maxUnavailable=0 = långsam men säker. maxSurge=5, maxUnavailable=0 = snabb och säker. maxUnavailable>0 = kortare downtime tolereras för snabbare rollout.
+**A:** Vid rolling update styr de hastighet vs säkerhet. `maxSurge` = max antal Pods ÖVER desired. `maxUnavailable` = max antal Pods UNDER desired. maxSurge=1, maxUnavailable=0 → långsam men säker. maxSurge=5, maxUnavailable=0 → snabbare, fortfarande säker. maxUnavailable>0 → snabbast, men kapaciteten sjunker tillfälligt.
 
-## Q: Hur fungerar rollback i K8s?
+## Q [workloads, deployments]: Hur fungerar rollback i K8s?
 
 **A:** Gamla ReplicaSets behålls med sin config intakt (styrs av `revisionHistoryLimit`). Rollback = vind upp gamla RS, vind ner nya. `kubectl rollout undo deployment/<namn> --to-revision=N`. Viktigt: undo är imperativt - YAML-filen i Git är fortfarande den nya versionen, så uppdatera den.
 
-## Q: Vad är HPA och vad krävs för att den ska fungera?
+## Q [workloads, deployments]: Vad är HPA och vad krävs för att den ska fungera?
 
 **A:** Horizontal Pod Autoscaler - skalar antal Pods automatiskt baserat på metrics (CPU vanligast). Krav: metrics-server installerad i klustret + `resources.requests` definierat på Pods (annars vet HPA inte vad den ska jämföra mot). Sätt alltid `maxReplicas` för att undvika kostnadsexplosion.
 
-## Q: Varför ska man inte editera ReplicaSets direkt?
+## Q [workloads, deployments]: Varför ska man inte editera ReplicaSets direkt?
 
 **A:** ReplicaSets ägs av Deployments. Ändringar i RS skrivs över när Deployment-controllern reconcilierar. Vill du ändra något: ändra Deployment, så uppdaterar den RS. Detta är en del av K8s deklarativa modell.
 
-## Q: Vad är "flapping" i auto-scaling?
+## Q [workloads, deployments]: Vad är "flapping" i auto-scaling?
 
 **A:** När en autoscaler skalar upp och ner snabbt i onödan (t.ex. ner till 3, upp till 5, ner till 3 inom minuter). Slösar resurser och ger instabil prestanda. K8s motverkar detta med "stabilization windows" - default 5 min innan nedskalning. Därför är nedskalning långsammare än uppskalning.
 
-## Q: Vad händer om image inte finns vid rolling update?
+## Q [workloads, deployments]: Vad händer om image inte finns vid rolling update?
 
-**A:** Nya Pods fastnar i `ImagePullBackOff`. Eftersom maxUnavailable hindrar att gamla Pods tas ner förrän nya är ready, fastnar rolloutsen. Inget downtime - gamla version fortsätter köra. Kör `kubectl rollout undo` för att gå tillbaka.
+**A:** Nya Pods fastnar i `ImagePullBackOff`. Gamla Pods tas inte ner förrän nya blir ready — alltså fastnar hela rolloutet. Inget downtime, gamla versionen kör vidare. Kör `kubectl rollout undo` för att gå tillbaka.
 
-## Q: Vad gör selector.matchLabels i en Deployment?
+## Q [workloads, deployments]: Vad gör selector.matchLabels i en Deployment?
 
 **A:** Definierar vilka Pods Deploymenten "äger" och hanterar. MÅSTE matcha `template.metadata.labels`. Kan inte ändras efter skapande - vill du ändra labels måste du skapa ny Deployment. Detta är limmet mellan Deployment, ReplicaSet, och Pods.
 
-## Q: Vad är `change-cause` annotation?
+## Q [workloads, deployments]: Vad är `change-cause` annotation?
 
-**A:** Annotation `kubernetes.io/change-cause` som syns i `kubectl rollout history`. Beskriver vad varje revision innehåller (t.ex. "update to version 3"). Utan den ser du bara revisionsnumren - bra för audit och förståelse av historik. Måste uppdateras manuellt på varje deploy.
+**A:** Annotation `kubernetes.io/change-cause` som syns i `kubectl rollout history`. Beskriver vad varje revision innehåller (t.ex. "update to version 3"). Utan den ser du bara revisionsnummer — svårt att veta vad ändringen var. Måste uppdateras manuellt på varje deploy.
 
-## Q: Varför sätter man alltid `maxReplicas` på HPA?
+## Q [workloads, deployments]: Varför sätter man alltid `maxReplicas` på HPA?
 
 **A:** Utan tak kan en DDoS-attack eller bug spinna upp oändliga Pods - enorm faktura och resursutmattning av klustret. `maxReplicas` är en safety brake. Sätt också monitoring/larm när max nås så du vet när skalningen träffar taket.
+
+# YAML-quiz
+
+## 1. Fyll i Deployment-basen
+
+Komplettera Deployment-manifestet. Fyll i apiVersion, kind och rätt fält för antal Pods.
+
+```yaml
+apiVersion: ???
+kind: ???
+metadata:
+  name: hello-deploy
+spec:
+  ???: 10
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-pod
+        image: nigelpoulton/k8sbook:1.0
+```
+
+**Svar:** `apiVersion: apps/v1`, `kind: Deployment`, `replicas: 10`
+
+**Förklaring:** Deployments ligger i API-gruppen `apps/v1` (inte `v1` som Pods). `replicas` styr hur många Pods ReplicaSet ska hålla igång.
+
+## 2. Rolling update-strategi
+
+Du vill ha en snabb deploy utan att tappa kapacitet. Fyll i blanken så att max 1 Pod skapas över desired och inga Pods försvinner under tiden.
+
+```yaml
+spec:
+  replicas: 20
+  strategy:
+    type: ???
+    rollingUpdate:
+      maxSurge: ???
+      maxUnavailable: ???
+```
+
+**Svar:** `type: RollingUpdate`, `maxSurge: 1`, `maxUnavailable: 0`
+
+**Förklaring:** `RollingUpdate` är default-strategin. `maxSurge: 1` tillåter en extra Pod över desired, och `maxUnavailable: 0` betyder att kapaciteten aldrig sjunker under rolloutet.
+
+## 3. Hitta felet — selector mismatch
+
+Manifestet applyas men Deploymenten skapar inga Pods. Vad är fel?
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+```
+
+**Svar:** `selector.matchLabels` (`app: web`) matchar inte `template.metadata.labels` (`app: nginx`). Ändra båda till samma värde, t.ex. `app: web`.
+
+**Förklaring:** Selector är limmet mellan Deployment, ReplicaSet och Pods. De måste matcha exakt, annars hittar Deployment inga Pods att äga. Selector går inte att ändra efter skapande — du måste delete och skapa om.
+
+# Scenarios
+
+## 1. Rollouten fastnar — Pods är Running men inte Ready
+
+**Situation:** Du körde `kubectl set image deployment/web nginx=nginx:1.26` och sen `kubectl rollout status`. Det timear ut. `kubectl get pods` visar nya Pods som `Running` men `0/1 READY`. Gamla Pods kör fortfarande och appen svarar.
+
+**Frågor:**
+- Vad är troligaste orsaken?
+- Hur diagnostiserar du vidare?
+- Hur fixar du utan downtime?
+
+**Modellsvar:** **Orsak:** Readiness probe failar på de nya Pods. Typiskt fel port, fel path eller appen tar längre tid att starta än `initialDelaySeconds`.
+
+**Diagnos:**
+
+```bash
+kubectl describe pod <ny-pod>     # kolla Events och Readiness-rader
+kubectl logs <ny-pod>             # ser appen ens HTTP-requesten?
+```
+
+Leta efter `Readiness probe failed: HTTP probe failed with statuscode` eller `connection refused`.
+
+**Fix:** Eftersom gamla Pods aldrig togs ner är det noll downtime. Kör:
+
+```bash
+kubectl rollout undo deployment/web
+```
+
+Sen rätta probe-porten/pathen i YAMLn och apply igen. Precis det Giacomo visade på lektionen.
+
+## 2. HPA skalar inte upp trots hög last
+
+**Situation:** Du har en HPA som ska skala mellan 2 och 10 Pods vid 50% CPU. Du kör load mot servicen, CPU på containrarna ligger uppenbart över 80%, men `kubectl get hpa` visar `TARGETS   <unknown>/50%` och replikorna ligger kvar på 2.
+
+**Frågor:**
+- Vad är troligaste orsaken?
+- Vilka två saker måste finnas på plats för att HPA ska kunna räkna?
+
+**Modellsvar:** **Orsak:** `<unknown>` betyder att HPA inte får några metrics. Antingen saknas **metrics-server** i klustret, eller så har Deploymenten inga **`resources.requests`** definierat.
+
+**Diagnos:**
+
+```bash
+kubectl top pods                  # om detta failar → metrics-server saknas
+kubectl get deployment web -o yaml | grep -A 3 resources
+```
+
+**Fix:**
+
+1. Installera metrics-server om `kubectl top pods` failar.
+2. Lägg till `resources.requests.cpu` på containern i Deploymenten:
+
+```yaml
+resources:
+  requests:
+    cpu: 100m
+```
+
+HPA jämför aktuell CPU mot `requests`. Utan requests vet den inte vad 50% betyder.
+
+## 3. Fel version i prod — snabb rollback
+
+**Situation:** Du deployade `app:2.0` till prod för 10 minuter sen. Slack lyser rött — användare får 500-fel. Du behöver tillbaka till `1.0` NU. `kubectl rollout history deployment/checkout` visar revision 1, 2 och 3.
+
+**Frågor:**
+- Vilket kommando kör du för att rolla tillbaka till version 1.0?
+- Vad behöver du tänka på efter rollbacken?
+
+**Modellsvar:** **Diagnos:** Kolla först vilken revision som var 1.0:
+
+```bash
+kubectl rollout history deployment/checkout --revision=2
+```
+
+Antag att revision 2 är 1.0.
+
+**Fix:**
+
+```bash
+kubectl rollout undo deployment/checkout --to-revision=2
+kubectl rollout status deployment/checkout
+```
+
+Gamla ReplicaSet vinds upp, nya vinds ner. Noll downtime.
+
+**Viktigt efter:** `rollout undo` är **imperativt** — YAMLn i Git är fortfarande `2.0`. Nästa person som kör `kubectl apply -f deploy.yml` deployar tillbaka det trasiga. Uppdatera YAML-filen till `1.0` direkt och pusha. Sätt också `change-cause` annotation så historiken blir tydlig.

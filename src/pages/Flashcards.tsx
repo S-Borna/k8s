@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
 import { Select } from "@/components/Select";
@@ -11,12 +12,24 @@ import { getDueCards } from "@/lib/spacedRepetition";
 
 type Mode = "due" | "all";
 type ChapterFilter = number | "all";
+type TagFilter = string | "all";
 
 export default function Flashcards() {
   const { state } = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState<Mode>("due");
   const [filter, setFilter] = useState<ChapterFilter>("all");
+  const [tagFilter, setTagFilter] = useState<TagFilter>(
+    searchParams.get("tag") ?? "all",
+  );
   const [resetTick, setResetTick] = useState(0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (tagFilter === "all") params.delete("tag");
+    else params.set("tag", tagFilter);
+    setSearchParams(params, { replace: true });
+  }, [tagFilter, searchParams, setSearchParams]);
 
   const allCards = useMemo(
     () =>
@@ -26,6 +39,12 @@ export default function Flashcards() {
     [],
   );
 
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    for (const card of allCards) for (const tag of card.tags) set.add(tag);
+    return Array.from(set).sort();
+  }, [allCards]);
+
   const filteredByChapter = useMemo(
     () =>
       filter === "all"
@@ -34,10 +53,18 @@ export default function Flashcards() {
     [allCards, filter],
   );
 
+  const filteredByTag = useMemo(
+    () =>
+      tagFilter === "all"
+        ? filteredByChapter
+        : filteredByChapter.filter((c) => c.tags.includes(tagFilter)),
+    [filteredByChapter, tagFilter],
+  );
+
   const visibleCards = useMemo(() => {
-    if (mode === "all") return filteredByChapter;
-    return getDueCards(filteredByChapter, state.flashcardState);
-  }, [filteredByChapter, mode, state.flashcardState]);
+    if (mode === "all") return filteredByTag;
+    return getDueCards(filteredByTag, state.flashcardState);
+  }, [filteredByTag, mode, state.flashcardState]);
 
   const dueCount = useMemo(
     () => getDueCards(allCards, state.flashcardState).length,
@@ -73,12 +100,20 @@ export default function Flashcards() {
           onChange={setFilter}
         />
 
+        {allTags.length > 0 && (
+          <TagPicker
+            value={tagFilter}
+            tags={allTags}
+            onChange={setTagFilter}
+          />
+        )}
+
         <span className="ml-auto text-xs text-text-faint">
           {visibleCards.length} kort visas
         </span>
       </motion.div>
 
-      <motion.div variants={staggerChild} key={`deck-${mode}-${filter}-${resetTick}`}>
+      <motion.div variants={staggerChild} key={`deck-${mode}-${filter}-${tagFilter}-${resetTick}`}>
         <FlashcardDeck
           cards={visibleCards}
           emptyTitle={
@@ -152,6 +187,30 @@ function ChapterPicker({
       onChange={(v) => onChange(v === "all" ? "all" : Number(v))}
       options={options}
       className="w-56"
+    />
+  );
+}
+
+function TagPicker({
+  value,
+  tags,
+  onChange,
+}: {
+  value: TagFilter;
+  tags: string[];
+  onChange: (next: TagFilter) => void;
+}) {
+  const options: SelectOption<string>[] = [
+    { value: "all", label: "Alla taggar" },
+    ...tags.map((tag) => ({ value: tag, label: tag })),
+  ];
+  return (
+    <Select
+      ariaLabel="Tagfilter"
+      value={value}
+      onChange={(v) => onChange(v)}
+      options={options}
+      className="w-44"
     />
   );
 }

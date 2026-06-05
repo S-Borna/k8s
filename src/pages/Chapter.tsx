@@ -12,6 +12,9 @@ import { useActiveTab } from "@/hooks/useActiveTab";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { HandsOnList } from "@/components/HandsOnList";
 import { FlashcardDeck } from "@/components/FlashcardDeck";
+import { ExitQuiz } from "@/components/ExitQuiz";
+import { YamlQuizDeck } from "@/components/YamlQuizDeck";
+import { ScenarioDeck } from "@/components/ScenarioDeck";
 import { ChapterJumper } from "@/components/ChapterJumper";
 import { ChapterPrevNext } from "@/components/ChapterPrevNext";
 import { SANDBOX_LABEL, SANDBOX_URL } from "@/lib/sandbox";
@@ -72,6 +75,13 @@ export default function ChapterPage() {
     { key: "lecture", label: "Giacomo & lektion" },
   ];
 
+  if (chapter.yamlQuizzes.length > 0) {
+    tabs.push({ key: "yaml", label: "YAML-quiz", count: chapter.yamlQuizzes.length });
+  }
+  if (chapter.scenarios.length > 0) {
+    tabs.push({ key: "scenarios", label: "Scenarios", count: chapter.scenarios.length });
+  }
+
   return (
     <motion.div variants={staggerParent} initial="initial" animate="enter">
       <motion.div variants={staggerChild} className="mb-5">
@@ -113,6 +123,12 @@ export default function ChapterPage() {
             status: !progress.summaryRead ? "in_progress" : progress.status,
           })
         }
+        onExitQuizPass={() =>
+          updateChapterProgress(chapter.id, {
+            summaryRead: true,
+            status: "completed",
+          })
+        }
         onToggleStep={(stepId) => {
           const next = { ...progress.handsOnSteps, [stepId]: !progress.handsOnSteps[stepId] };
           const allDone =
@@ -143,6 +159,7 @@ type TabContentProps = {
   summaryRead: boolean;
   handsOnSteps: Record<string, boolean>;
   onMarkSummaryRead: () => void;
+  onExitQuizPass: () => void;
   onToggleStep: (stepId: string) => void;
   onResetHandsOn: () => void;
 };
@@ -154,6 +171,7 @@ function TabContent({
   summaryRead,
   handsOnSteps,
   onMarkSummaryRead,
+  onExitQuizPass,
   onToggleStep,
   onResetHandsOn,
 }: TabContentProps) {
@@ -183,6 +201,10 @@ function TabContent({
             {summaryRead ? "Markerat som läst" : "Markera som läst"}
           </motion.button>
         </div>
+
+        {chapter.flashcards.length > 0 && (
+          <ExitQuiz cards={chapter.flashcards} onPass={onExitQuizPass} />
+        )}
       </motion.section>
     );
   }
@@ -244,6 +266,32 @@ function TabContent({
             <LecturePlaceholder />
           )}
         </div>
+      </motion.section>
+    );
+  }
+
+  if (active === "yaml") {
+    return (
+      <motion.section
+        variants={staggerChild}
+        initial="initial"
+        animate="enter"
+        key="yaml"
+      >
+        <YamlQuizDeck quizzes={chapter.yamlQuizzes} />
+      </motion.section>
+    );
+  }
+
+  if (active === "scenarios") {
+    return (
+      <motion.section
+        variants={staggerChild}
+        initial="initial"
+        animate="enter"
+        key="scenarios"
+      >
+        <ScenarioDeck scenarios={chapter.scenarios} />
       </motion.section>
     );
   }
