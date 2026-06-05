@@ -44,7 +44,7 @@ function buildWalkthroughs(): YamlWalkthrough[] {
       source,
       sourceLabel: String(
         frontmatter["sourceLabel"] ??
-          (source === "lecture" ? "Lektion" : "Chas Challenge"),
+          (source === "lecture" ? "Lektion" : "Eget projekt"),
       ),
       chapterId:
         typeof frontmatter["chapterId"] === "number"

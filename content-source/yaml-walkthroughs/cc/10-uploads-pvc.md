@@ -1,14 +1,14 @@
 ---
 title: "Uploads PVC"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Uploads PVC"
+sourceLabel: "Eget projekt — Uploads PVC"
 chapterId: 11
 filename: "10-uploads-pvc.yaml"
 ---
 
 # Varför
 
-PVC:n som backenden ber om för att spara uppladdningar — bilder, dokument, allt usern POSTar. Utan den försvinner filerna när poden dör (poddar är ephemeral). Giacomo körde CC-demot för att visa hur en stateful komponent klistras fast på riktig disk via Longhorn i lab-klustret. För ForeverHome är det här hjärtat i "upload"-flödet — frontenden skickar fil, backenden skriver till `/uploads`, och PVC:n ser till att filen finns kvar nästa morgon.
+PVC:n som backenden ber om för att spara uppladdningar — bilder, dokument, allt usern POSTar. Utan den försvinner filerna när poden dör (poddar är ephemeral). Giacomo körde demot för att visa hur en stateful komponent klistras fast på riktig disk via Longhorn i lab-klustret. För appen är det här hjärtat i "upload"-flödet — frontenden skickar fil, backenden skriver till `/uploads`, och PVC:n ser till att filen finns kvar nästa morgon.
 
 # Kind: PersistentVolumeClaim
 
@@ -37,7 +37,7 @@ Longhorn är storage-systemet som körs i lab-klustret (rad 10) — det provisio
 # Tentapunkter
 
 - Skillnaden mellan PVC (beställning) och PV (faktisk disk) — PVC är abstraktionen poden pratar med
-- Varför RWO låser ForeverHome-backenden till 1 replica + Recreate-strategi
+- Varför RWO låser backenden till 1 replica + Recreate-strategi
 - Vad storageClassName gör och vad som händer om man kör manifestet mot fel kluster (PVC fastnar Pending)
 - Att PVC överlever att poden dör — det är hela poängen med 'Persistent' i namnet
 - Hur PVC kopplas in i en Deployment via volumes + volumeMounts (nästa steg i flödet)

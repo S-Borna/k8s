@@ -1,14 +1,14 @@
 ---
 title: "Backend Deployment"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Backend Deployment"
+sourceLabel: "Eget projekt — Backend Deployment"
 chapterId: 6
 filename: "02-backend-deployment.yaml"
 ---
 
 # Varför
 
-ASP.NET Core-backenden för ForeverHome — den som driver API:t som frontend pratar med. Den här manifesten visar varför Deployment-strategin INTE alltid kan vara RollingUpdate: backenden mountar en RWO-PVC för uppladdade bilder, och två Pods kan inte hålla i samma volym på olika noder samtidigt. Giacomo har dragit det här flera gånger — det är klassisk fallgrop för G-nivå-frågor om strategi vs. storage.
+ASP.NET Core-backenden för appen — den som driver API:t som frontend pratar med. Den här manifesten visar varför Deployment-strategin INTE alltid kan vara RollingUpdate: backenden mountar en RWO-PVC för uppladdade bilder, och två Pods kan inte hålla i samma volym på olika noder samtidigt. Giacomo har dragit det här flera gånger — det är klassisk fallgrop för G-nivå-frågor om strategi vs. storage.
 
 # Deployment-skelettet
 

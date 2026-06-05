@@ -25,7 +25,7 @@ export default function YamlWalkthroughs() {
   const grouped = useMemo(() => {
     const map = new Map<string, YamlWalkthrough[]>();
     for (const w of yamlWalkthroughs) {
-      const key = w.source === "lecture" ? "Lektioner" : "Chas Challenge";
+      const key = w.source === "lecture" ? "Lektioner" : "Eget projekt";
       const arr = map.get(key) ?? [];
       arr.push(w);
       map.set(key, arr);
@@ -66,7 +66,7 @@ export default function YamlWalkthroughs() {
   return (
     <motion.div variants={staggerParent} initial="initial" animate="enter">
       <PageHeader
-        eyebrow={`${yamlWalkthroughs.length} manifests från lektioner + Chas Challenge`}
+        eyebrow={`${yamlWalkthroughs.length} manifests från lektioner + eget projekt`}
         title="YAML"
         description={
           <>
