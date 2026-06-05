@@ -1,14 +1,14 @@
 ---
 title: "Middleware"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Traefik Middleware"
+sourceLabel: "Eget projekt — Middleware"
 chapterId: 8
 filename: "09-middleware.yaml"
 ---
 
 # Varför
 
-Middleware löser ett konkret problem: webbläsaren skickar `/api/users` men backend-appen i ForeverHome lyssnar bara på `/users`. Istället för att ändra koden i ASP.NET-backenden sitter Traefik-middlewaren emellan och kapar bort `/api`-prefixet innan requesten går vidare. Demonstrerar Traefiks middleware-koncept — små byggklossar som kan ändra requests in transit mellan router och service. CC-projektet visar varför det är smart: frontend och backend kan hålla sina egna URL-konventioner utan att jaga varandra.
+Middleware löser ett konkret problem: webbläsaren skickar `/api/users` men backend-appen i appen lyssnar bara på `/users`. Istället för att ändra koden i ASP.NET-backenden sitter Traefik-middlewaren emellan och kapar bort `/api`-prefixet innan requesten går vidare. Demonstrerar Traefiks middleware-koncept — små byggklossar som kan ändra requests in transit mellan router och service. egna projektet visar varför det är smart: frontend och backend kan hålla sina egna URL-konventioner utan att jaga varandra.
 
 # apiVersion och kind — Traefik-CRD
 
@@ -16,7 +16,7 @@ Middleware löser ett konkret problem: webbläsaren skickar `/api/users` men bac
 
 # metadata och namespace-koppling
 
-(rad 3-6) Namnet `api-strip-prefix` är det Said refererar till när han kopplar middlewaren till en IngressRoute. Label `app: foreverhome` knyter den till ForeverHome-projektet — bra att ha för `kubectl get middleware -l app=foreverhome` när klustret växer. Middleware lever i samma namespace som routern som använder den, annars hittas den inte.
+(rad 3-6) Namnet `api-strip-prefix` är det Said refererar till när han kopplar middlewaren till en IngressRoute. Label `app: foreverhome` knyter den till appen — bra att ha för `kubectl get middleware -l app=foreverhome` när klustret växer. Middleware lever i samma namespace som routern som använder den, annars hittas den inte.
 
 # stripPrefix — vad den faktiskt gör
 
@@ -28,7 +28,7 @@ Middleware löser ett konkret problem: webbläsaren skickar `/api/users` men bac
 
 # Hur den kopplas in i IngressRouten
 
-Middleware gör ingenting i sig själv — den måste refereras från en IngressRoute med `middlewares: - name: api-strip-prefix`. Trafiken går router -> middleware-kedja -> service, i den ordningen. Said mappar ihop detta i CC-projektets ingress-fil, vilket gör att webbläsarens `/api/users` träffar ASP.NET-backenden som ett rent `/users`-anrop.
+Middleware gör ingenting i sig själv — den måste refereras från en IngressRoute med `middlewares: - name: api-strip-prefix`. Trafiken går router -> middleware-kedja -> service, i den ordningen. Said mappar ihop detta i egna projektets ingress-fil, vilket gör att webbläsarens `/api/users` träffar ASP.NET-backenden som ett rent `/users`-anrop.
 
 # Tentapunkter
 

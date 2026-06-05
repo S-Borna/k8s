@@ -8,7 +8,7 @@ filename: "kap10-service-discovery.yaml"
 
 # Varför
 
-Giacomo visade hur Kubernetes-DNS faktiskt funkar i praktiken — inte teori, utan en pod som verkligen kör `nslookup` och `curl` mot olika Services. Manifesten bygger upp två namespaces (`shop` och `finance`) för att tvinga fram frågan: vad händer när du anropar en Service med kort namn över namespace-gränsen? Hela poängen är att visa att `catalog` funkar från `shop`, men `payments` i `finance` kräver mer — antingen FQDN eller env-var-trick. Det är samma matrik som i Saids ForeverHome-arkitektur när `auth` ska prata med `payments` över namespaces.
+Giacomo visade hur Kubernetes-DNS faktiskt funkar i praktiken — inte teori, utan en pod som verkligen kör `nslookup` och `curl` mot olika Services. Manifesten bygger upp två namespaces (`shop` och `finance`) för att tvinga fram frågan: vad händer när du anropar en Service med kort namn över namespace-gränsen? Hela poängen är att visa att `catalog` funkar från `shop`, men `payments` i `finance` kräver mer — antingen FQDN eller env-var-trick. Det är samma matrik som i Saids arkitekturen när `auth` ska prata med `payments` över namespaces.
 
 # Två namespaces — shop och finance
 

@@ -1,14 +1,14 @@
 ---
 title: "Frontend Service"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Frontend Service"
+sourceLabel: "Eget projekt — Frontend Service"
 chapterId: 7
 filename: "07-frontend-service.yaml"
 ---
 
 # Varför
 
-Frontend-podden behöver en stabil adress inne i klustret — annars hittar Ingress den inte. Pods byts ut, får nya IPs hela tiden, så du kan inte hard-koda nåt. Den här Servicen sitter mellan Ingress och frontend-deployment i ForeverHome, och dess enda jobb är att säga: "alla pods med dessa labels nås på port 80 här inne". ClusterIP räcker — trafiken kommer från Ingress, inte från internet direkt.
+Frontend-podden behöver en stabil adress inne i klustret — annars hittar Ingress den inte. Pods byts ut, får nya IPs hela tiden, så du kan inte hard-koda nåt. Den här Servicen sitter mellan Ingress och frontend-deployment i appen, och dess enda jobb är att säga: "alla pods med dessa labels nås på port 80 här inne". ClusterIP räcker — trafiken kommer från Ingress, inte från internet direkt.
 
 # Service-grunderna
 
@@ -26,7 +26,7 @@ ports-blocket (rad 12-15) är två nummer som förvirrar många. port: 80 är va
 
 ClusterIP (rad 16) betyder Servicen får en intern IP som BARA fungerar inne i klustret. Ingen utifrån kan nå den direkt — och det är precis poängen. Frontend-trafiken kommer in via Ingress (TLS, host-routing, allt det), och Ingress ringer ClusterIP-Servicen vidare. Hade detta varit NodePort skulle frontend exponeras på varje nods port 30000-nåt, vilket är fult och osäkert. LoadBalancer kostar pengar på cloud-providers. ClusterIP är default och rätt för allt som ligger bakom en Ingress.
 
-# Hur det hänger ihop i ForeverHome
+# Hur det hänger ihop i appen
 
 Flöde: webbläsare -> DNS -> Ingress (TLS-terminerar) -> frontend Service (ClusterIP) -> frontend Pod (port 5173). Servicen är limmet i mitten — utan den vet inte Ingress vilken pod-IP den ska skicka till, och pod-IPs byts hela tiden när pods restartar. Service-objektet är stabilt: namnet 'frontend' lever så länge manifesten ligger applierad, IP-en likaså.
 

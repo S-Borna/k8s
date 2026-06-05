@@ -1,18 +1,18 @@
 ---
 title: "Registry Secret"
 source: chas-challenge
-sourceLabel: "Chas Challenge — GitLab Registry Sealed Secret"
+sourceLabel: "Eget projekt — Registry Secret"
 chapterId: 12
 filename: "12-gitlab-registry-sealed.yaml"
 ---
 
 # Varför
 
-GitLab Container Registry är privat — backend-podden kan inte pulla imagen utan inloggning. Lösningen är en Secret av typen `dockerconfigjson` som Kubelet använder vid `imagePullSecrets`. Men en ren Secret är bara base64 — committar du den till Git läcker du credentials. Därför sealed: krypterad mot lab-klustrets publika nyckel, controllern i `kube-system` dekrypterar och spottar ut en riktig Secret med samma namn. ForeverHome-deployen kan ligga öppet i Git utan att någon kan läsa dockerlösenordet.
+GitLab Container Registry är privat — backend-podden kan inte pulla imagen utan inloggning. Lösningen är en Secret av typen `dockerconfigjson` som Kubelet använder vid `imagePullSecrets`. Men en ren Secret är bara base64 — committar du den till Git läcker du credentials. Därför sealed: krypterad mot lab-klustrets publika nyckel, controllern i `kube-system` dekrypterar och spottar ut en riktig Secret med samma namn. deployen kan ligga öppet i Git utan att någon kan läsa dockerlösenordet.
 
 # Varför en SealedSecret istället för en Secret
 
-`kind: SealedSecret` (rad 3) är inte en native K8s-resurs — det är en CRD från Bitnami som installerats på lab-klustret. Skillnaden mot vanlig `Secret`: en Secret är base64, alltså klartext för alla med Git-access. En SealedSecret är RSA-krypterad mot klustrets publika nyckel, så bara controllern i kube-system kan läsa den. Det är därför filen kan ligga i ForeverHome-repot bredvid deployment.yaml utan att doxxa GitLab-tokenet.
+`kind: SealedSecret` (rad 3) är inte en native K8s-resurs — det är en CRD från Bitnami som installerats på lab-klustret. Skillnaden mot vanlig `Secret`: en Secret är base64, alltså klartext för alla med Git-access. En SealedSecret är RSA-krypterad mot klustrets publika nyckel, så bara controllern i kube-system kan läsa den. Det är därför filen kan ligga i repot bredvid deployment.yaml utan att doxxa GitLab-tokenet.
 
 # Namespace-låsningen
 

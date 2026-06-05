@@ -1,7 +1,7 @@
 ---
 title: "Backend Secret"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Backend Secret (placeholder)"
+sourceLabel: "Eget projekt — Backend Secret"
 chapterId: 12
 filename: "05-backend-secret.yaml"
 ---
@@ -32,7 +32,7 @@ Den här Secreten är värdelös utan en konsument. I `04-backend-deployment.yam
 
 # På riktigt — SealedSecret istället för det här
 
-I Saids ForeverHome-deploy mot CC-klustret används INTE den här Opaque-Secreten direkt. Istället finns 12-gitlab-registry-sealed.yaml och 13-backend-secrets-sealed.yaml — de innehåller krypterade värden som bara klustrets sealed-secrets-controller kan dekryptera. De är safe att committa till Git. När de appliceras, genererar controllern den vanliga Opaque-Secreten i klustret — exakt det objekt som den här mallen beskriver.
+I Saids deployen mot lab-klustret används INTE den här Opaque-Secreten direkt. Istället finns 12-gitlab-registry-sealed.yaml och 13-backend-secrets-sealed.yaml — de innehåller krypterade värden som bara klustrets sealed-secrets-controller kan dekryptera. De är safe att committa till Git. När de appliceras, genererar controllern den vanliga Opaque-Secreten i klustret — exakt det objekt som den här mallen beskriver.
 
 # Tentapunkter
 

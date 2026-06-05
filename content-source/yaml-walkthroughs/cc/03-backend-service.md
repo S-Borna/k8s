@@ -1,14 +1,14 @@
 ---
 title: "Backend Service"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Backend Service"
+sourceLabel: "Eget projekt — Backend Service"
 chapterId: 7
 filename: "03-backend-service.yaml"
 ---
 
 # Varför
 
-Backend-Servicen är klisterlappen mellan frontend och backend-Podsen i ForeverHome. Eftersom Pods får nya IP varje gång de startar om kan frontend inte ringa dem direkt — den ringer namnet `backend` och K8s router trafiken till rätt Pod. CC visade här default-typen `ClusterIP`, dvs ingen access utifrån, bara intra-cluster — exakt vad ett backend ska vara.
+Backend-Servicen är klisterlappen mellan frontend och backend-Podsen i appen. Eftersom Pods får nya IP varje gång de startar om kan frontend inte ringa dem direkt — den ringer namnet `backend` och K8s router trafiken till rätt Pod. CC visade här default-typen `ClusterIP`, dvs ingen access utifrån, bara intra-cluster — exakt vad ett backend ska vara.
 
 # Service-objektet och namnet
 

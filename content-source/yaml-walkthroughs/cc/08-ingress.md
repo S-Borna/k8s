@@ -1,14 +1,14 @@
 ---
 title: "Ingress"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Ingress"
+sourceLabel: "Eget projekt — Ingress"
 chapterId: 8
 filename: "08-ingress.yaml"
 ---
 
 # Varför
 
-Det här är Ingress-manifesten som gör ForeverHome nåbar utifrån — en publik URL med HTTPS istället för `kubectl port-forward` varje gång man vill testa. CC visade hur Traefik (k3s-klustrets inbyggda ingress-controller) routar `/api` till backend-Servicen och `/` till frontend-Servicen på samma host. Det är här bokens "Ingress = L7-router framför Services" blir konkret: en URL, två backends, path-baserad routing.
+Det här är Ingress-manifesten som gör appen nåbar utifrån — en publik URL med HTTPS istället för `kubectl port-forward` varje gång man vill testa. CC visade hur Traefik (k3s-klustrets inbyggda ingress-controller) routar `/api` till backend-Servicen och `/` till frontend-Servicen på samma host. Det är här bokens "Ingress = L7-router framför Services" blir konkret: en URL, två backends, path-baserad routing.
 
 # apiVersion + kind
 

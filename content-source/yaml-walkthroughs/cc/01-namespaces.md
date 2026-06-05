@@ -1,14 +1,14 @@
 ---
 title: "Namespaces"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Namespaces"
+sourceLabel: "Eget projekt — Namespaces"
 chapterId: 5
 filename: "01-namespaces.yaml"
 ---
 
 # Varför
 
-Namespaces är Saids rotpunkt i lab-klustret — varje student/team får ett eget namespace av Giacomo, och allt annat (deployments, services, secrets) hamnar där. Manifesten visar hur ForeverHome-projektet är isolerat från resten av kursen på `doe25-said-ebadi`. Pedagogiken: en enkel resurs, men det är referenspunkten alla andra manifests i CC-mappen pekar mot via `-n`-flaggan eller kustomize.
+Namespaces är Saids rotpunkt i lab-klustret — varje student/team får ett eget namespace av Giacomo, och allt annat (deployments, services, secrets) hamnar där. Manifesten visar hur appen är isolerat från resten av kursen på `doe25-said-ebadi`. Pedagogiken: en enkel resurs, men det är referenspunkten alla andra manifests i egna mappen pekar mot via `-n`-flaggan eller kustomize.
 
 # Kommentarsblocket — varför finns ingen Namespace egentligen?
 
@@ -20,7 +20,7 @@ Rad 13-14 deklarerar att detta är en `Namespace`-resurs i core-API:t (`v1`). Na
 
 # metadata.name — själva identifieraren
 
-Rad 15-16 ger namespacet namnet `doe25-said-ebadi`. Det är detta namn som hamnar i `-n`-flaggan överallt i CC-mappen. Konventionen i kursen: `doe25-<student-eller-team>` — kurskod, sen ägare. Ändrar man namnet här måste man ändra det i *varenda* annan manifest som refererar till namespacet.
+Rad 15-16 ger namespacet namnet `doe25-said-ebadi`. Det är detta namn som hamnar i `-n`-flaggan överallt i egna mappen. Konventionen i kursen: `doe25-<student-eller-team>` — kurskod, sen ägare. Ändrar man namnet här måste man ändra det i *varenda* annan manifest som refererar till namespacet.
 
 # Labels — för organisation och filtrering
 

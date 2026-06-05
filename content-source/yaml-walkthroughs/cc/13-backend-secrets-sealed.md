@@ -1,7 +1,7 @@
 ---
 title: "Backend Secrets (sealed)"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Backend Secrets (Sealed)"
+sourceLabel: "Eget projekt — Backend Secrets"
 chapterId: 12
 filename: "13-backend-secrets-sealed.yaml"
 ---

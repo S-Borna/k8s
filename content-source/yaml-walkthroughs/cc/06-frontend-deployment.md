@@ -1,14 +1,14 @@
 ---
 title: "Frontend Deployment"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Frontend Deployment"
+sourceLabel: "Eget projekt — Frontend Deployment"
 chapterId: 6
 filename: "06-frontend-deployment.yaml"
 ---
 
 # Varför
 
-Frontend-deployment för ForeverHome — Next.js-appen som användaren ser. Den är stateless, så Said kör flera replicas och låter K8s rulla ut nya versioner utan downtime. Hela poängen med Deployment + ReplicaSet — istället för raw Pods — är att få self-healing och RollingUpdate gratis. Om en pod dör så startar K8s en ny direkt.
+Frontend-deployment för appen — Next.js-appen som användaren ser. Den är stateless, så Said kör flera replicas och låter K8s rulla ut nya versioner utan downtime. Hela poängen med Deployment + ReplicaSet — istället för raw Pods — är att få self-healing och RollingUpdate gratis. Om en pod dör så startar K8s en ny direkt.
 
 # Kind och metadata
 

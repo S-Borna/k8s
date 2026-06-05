@@ -1,14 +1,14 @@
 ---
 title: "Backend HPA"
 source: chas-challenge
-sourceLabel: "Chas Challenge — Backend HPA"
+sourceLabel: "Eget projekt — Backend HPA"
 chapterId: 6
 filename: "04-backend-hpa.yaml"
 ---
 
 # Varför
 
-HPA:n finns för att visa hur man säger till Kubernetes "skala upp backend när CPU drar". I ForeverHome är den medvetet kastrerad — min=max=1 — för att backend har en RWO-PVC för uploads och `strategy: Recreate`. Giacomo poängterade just det här i kapitlet: HPA är förberedd för framtiden när bilder flyttas till objektstorage (S3/R2), då kan backend skalas horisontellt. Just nu är HPA bara dokumentation av intentionen.
+HPA:n finns för att visa hur man säger till Kubernetes "skala upp backend när CPU drar". I appen är den medvetet kastrerad — min=max=1 — för att backend har en RWO-PVC för uploads och `strategy: Recreate`. Giacomo poängterade just det här i kapitlet: HPA är förberedd för framtiden när bilder flyttas till objektstorage (S3/R2), då kan backend skalas horisontellt. Just nu är HPA bara dokumentation av intentionen.
 
 # API-versionen och vad det betyder
 
@@ -26,7 +26,7 @@ Raderna 13-14 låser HPA till exakt 1 podd. Det här är inte ett misstag — de
 
 Block 15-21 säger: titta på genomsnittlig CPU-utilization över poddarna, target 75 % av request-värdet. Notera `type: Utilization` — det räknar mot Pod-spec:ens `resources.requests.cpu`, inte mot nodens totala CPU. Om backend inte har `requests.cpu` satt i deployment så fungerar inte HPA — den visar `<unknown>` och skalar aldrig. Det här är den vanligaste HPA-buggen.
 
-# Varför den ändå är med i ForeverHome
+# Varför den ändå är med i appen
 
 Said har den här i repot som dokumentation av migrations-vägen: när uploads flyttas till R2/S3 (objektstorage), då försvinner RWO-PVC:n, då kan `strategy` bytas till RollingUpdate, då kan maxReplicas höjas till t.ex. 5. HPA-manifesten är då redan på plats. Det är ett vanligt mönster i prod — bygg in skalningen tidigt, aktivera när stateful-flaskhalsen är borta.
 
