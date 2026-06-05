@@ -1,5 +1,5 @@
 ---
-title: "Persistent volume for user-uppladningar"
+title: "Uploads PVC"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Uploads PVC"
 chapterId: 11

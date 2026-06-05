@@ -1,5 +1,5 @@
 ---
-title: "ForeverHome backend Deployment (.NET 8)"
+title: "Backend Deployment"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Backend Deployment"
 chapterId: 6

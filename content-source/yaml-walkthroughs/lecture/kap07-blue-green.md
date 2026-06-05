@@ -1,5 +1,5 @@
 ---
-title: "Blue/green deployment via Service-selector"
+title: "Blue/green Service"
 source: lecture
 sourceLabel: "Lektion 21 april — Kap 7 Services (blue/green deploy)"
 chapterId: 7

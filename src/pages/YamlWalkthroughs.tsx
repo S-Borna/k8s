@@ -78,9 +78,12 @@ export default function YamlWalkthroughs() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <motion.aside variants={staggerChild} className="lg:sticky lg:top-6 lg:self-start">
-          <div className="glass rounded-2xl p-3">
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <motion.aside
+          variants={staggerChild}
+          className="min-w-0 lg:sticky lg:top-6 lg:self-start"
+        >
+          <div className="glass overflow-hidden rounded-2xl p-3">
             {grouped.map(([groupLabel, items]) => (
               <div key={groupLabel} className="mb-4 last:mb-0">
                 <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.18em] text-text-faint">
@@ -101,7 +104,7 @@ export default function YamlWalkthroughs() {
           </div>
         </motion.aside>
 
-        <motion.section variants={staggerChild}>
+        <motion.section variants={staggerChild} className="min-w-0">
           {active && (
             <Detail walkthrough={active} copied={copied} onCopy={copyYaml} />
           )}
@@ -126,18 +129,20 @@ function ListItem({
       onClick={onClick}
       whileTap={{ scale: 0.99 }}
       transition={spring}
-      className={`relative flex flex-col items-start gap-0.5 rounded-xl px-3 py-2 text-left transition ${
+      className={`relative flex w-full min-w-0 flex-col items-start gap-0.5 overflow-hidden rounded-xl px-3 py-2 text-left transition ${
         isActive
           ? "bg-amber/12 ring-1 ring-amber/25"
           : "hover:bg-surface/40"
       }`}
     >
       <span
-        className={`truncate text-sm ${isActive ? "text-amber" : "text-text"}`}
+        className={`block w-full truncate text-sm ${
+          isActive ? "text-amber" : "text-text"
+        }`}
       >
         {walkthrough.title}
       </span>
-      <span className="truncate text-[10px] text-text-faint">
+      <span className="block w-full truncate text-[10px] text-text-faint">
         {walkthrough.filename}
       </span>
     </motion.button>

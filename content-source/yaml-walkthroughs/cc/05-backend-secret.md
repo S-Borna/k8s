@@ -1,5 +1,5 @@
 ---
-title: "Backend Secret (lokal mall - sealed-versionen används i CC-deploy)"
+title: "Backend Secret"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Backend Secret (placeholder)"
 chapterId: 12

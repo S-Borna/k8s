@@ -1,5 +1,5 @@
 ---
-title: "ForeverHome Ingress (path-routing /api → backend, / → frontend)"
+title: "Ingress"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Ingress"
 chapterId: 8

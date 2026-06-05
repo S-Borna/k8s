@@ -1,5 +1,5 @@
 ---
-title: "PVC med longhorn-storageclass + writer-Pod"
+title: "PVC + Pod"
 source: lecture
 sourceLabel: "Lektion 8 maj — Kap 11 Storage"
 chapterId: 11

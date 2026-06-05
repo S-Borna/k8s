@@ -1,5 +1,5 @@
 ---
-title: "Horizontal Pod Autoscaler for backend"
+title: "Backend HPA"
 source: chas-challenge
 sourceLabel: "Chas Challenge — Backend HPA"
 chapterId: 6
