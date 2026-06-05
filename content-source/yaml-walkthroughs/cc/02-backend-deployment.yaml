@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: foreverhome
+    component: backend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: foreverhome
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: foreverhome
+        component: backend
+    spec:
+      securityContext:
+        fsGroup: 1000
+      imagePullSecrets:
+        - name: gitlab-registry
+      containers:
+        - name: backend
+          image: registry.chas-lab.dev/chas-challenge-2026/grupp-10/grupp-10-cc-2026/backend:latest
+          ports:
+            - containerPort: 5158
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:5158"
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+              value: "true"
+            - name: Jwt__Issuer
+              value: "ForeverHome"
+            - name: Jwt__Audience
+              value: "ForeverHomeUsers"
+          envFrom:
+            - secretRef:
+                name: backend-secrets
+          livenessProbe:
+            tcpSocket:
+              port: 5158
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 5158
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/wwwroot/uploads
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads
+      restartPolicy: Always

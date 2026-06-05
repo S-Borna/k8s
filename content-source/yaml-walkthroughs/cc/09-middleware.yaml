@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-strip-prefix
+  labels:
+    app: foreverhome
+spec:
+  stripPrefix:
+    prefixes:
+      - /api

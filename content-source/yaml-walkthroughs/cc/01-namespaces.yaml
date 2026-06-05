@@ -1,0 +1,19 @@
+# ForeverHome körs i skolans nya labbkluster (cp-1.labb.k3s.chas-lab.dev).
+# Namespace skapas av klusteradmin (Giacomo) och tilldelas per student eller team
+# — studenter har inte rätt att skapa namespaces själva. Nedan är referens till
+# det namespace som används just nu. När team-namespace är uppe pekar pipelinen
+# och manifesten dit istället.
+#
+# Nuvarande namespace (Saids personliga, tilldelat av kursadmin):
+#   doe25-said-ebadi
+#
+# Manifesten i denna mapp applicerar mot aktuellt namespace via -n-flaggan i
+# kubectl eller via kustomize-overlay. Ingen Namespace-resurs deklareras här.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: doe25-said-ebadi
+  labels:
+    app: foreverhome
+    managed-by: chas-academy

@@ -9,6 +9,7 @@ import MockExam from "@/pages/MockExam";
 import Cheatsheet from "@/pages/Cheatsheet";
 import SmartReview from "@/pages/SmartReview";
 import Architecture from "@/pages/Architecture";
+import YamlWalkthroughs from "@/pages/YamlWalkthroughs";
 import Settings from "@/pages/Settings";
 
 const Gallery = lazy(() => import("@/playground/Gallery"));
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="cheatsheet" element={<Cheatsheet />} />
             <Route path="plugga" element={<SmartReview />} />
             <Route path="arkitektur" element={<Architecture />} />
+            <Route path="yaml" element={<YamlWalkthroughs />} />
             <Route path="installningar" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
