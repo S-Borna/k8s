@@ -12,7 +12,7 @@ Frontend-deployment för appen — Next.js-appen som användaren ser. Den är st
 
 # Kind och metadata
 
-Deployment, inte Pod direkt (rad 1-7). Det betyder att K8s skapar ett ReplicaSet under huven som håller koll på antalet pods. Labels `app: foreverhome` och `component: frontend` är viktiga — Service-manifesten matchar på exakt dessa för att veta vilka pods som ska få trafik. Skriver du fel label här så hittar Service ingenting och appen är död fast podden lever.
+Deployment, inte Pod direkt (rad 1-7). Det betyder att K8s skapar ett ReplicaSet under huven som håller koll på antalet pods. Labels `app: felis` och `component: frontend` är viktiga — Service-manifesten matchar på exakt dessa för att veta vilka pods som ska få trafik. Skriver du fel label här så hittar Service ingenting och appen är död fast podden lever.
 
 # Replicas och selector
 

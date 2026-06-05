@@ -16,7 +16,7 @@ Middleware löser ett konkret problem: webbläsaren skickar `/api/users` men bac
 
 # metadata och namespace-koppling
 
-(rad 3-6) Namnet `api-strip-prefix` är det Said refererar till när han kopplar middlewaren till en IngressRoute. Label `app: foreverhome` knyter den till appen — bra att ha för `kubectl get middleware -l app=foreverhome` när klustret växer. Middleware lever i samma namespace som routern som använder den, annars hittas den inte.
+(rad 3-6) Namnet `api-strip-prefix` är det Said refererar till när han kopplar middlewaren till en IngressRoute. Label `app: felis` knyter den till appen — bra att ha för `kubectl get middleware -l app=felis` när klustret växer. Middleware lever i samma namespace som routern som använder den, annars hittas den inte.
 
 # stripPrefix — vad den faktiskt gör
 

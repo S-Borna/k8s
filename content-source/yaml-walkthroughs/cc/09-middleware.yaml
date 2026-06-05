@@ -3,7 +3,7 @@ kind: Middleware
 metadata:
   name: api-strip-prefix
   labels:
-    app: foreverhome
+    app: felis
 spec:
   stripPrefix:
     prefixes:

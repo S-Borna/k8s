@@ -1,16 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: foreverhome
+  name: felis
   labels:
-    app: foreverhome
+    app: felis
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.middlewares: doe25-said-ebadi-api-strip-prefix@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
-    - host: foreverhome-doe25-said.labb.k3s.chas-lab.dev
+    - host: felis-doe25-said.labb.k3s.chas-lab.dev
       http:
         paths:
           - path: /api

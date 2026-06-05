@@ -1,4 +1,4 @@
-# ForeverHome körs i skolans nya labbkluster (cp-1.labb.k3s.chas-lab.dev).
+# Felis körs i skolans nya labbkluster (cp-1.labb.k3s.chas-lab.dev).
 # Namespace skapas av klusteradmin (Giacomo) och tilldelas per student eller team
 # — studenter har inte rätt att skapa namespaces själva. Nedan är referens till
 # det namespace som används just nu. När team-namespace är uppe pekar pipelinen
@@ -15,5 +15,5 @@ kind: Namespace
 metadata:
   name: doe25-said-ebadi
   labels:
-    app: foreverhome
+    app: felis
     managed-by: chas-academy

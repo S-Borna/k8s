@@ -24,11 +24,11 @@ Rad 15-16 ger namespacet namnet `doe25-said-ebadi`. Det är detta namn som hamna
 
 # Labels — för organisation och filtrering
 
-Rad 17-19 sätter två labels: `app: foreverhome` knyter namespacet till Saids projekt, `managed-by: chas-academy` markerar att det är skolan som äger det. Labels används av `kubectl get ns -l app=foreverhome` för att filtrera. Inte tvingande för K8s — men gör det enklare för Giacomo att se vilka namespaces som tillhör vilket projekt.
+Rad 17-19 sätter två labels: `app: felis` knyter namespacet till Saids projekt, `managed-by: chas-academy` markerar att det är skolan som äger det. Labels används av `kubectl get ns -l app=felis` för att filtrera. Inte tvingande för K8s — men gör det enklare för Giacomo att se vilka namespaces som tillhör vilket projekt.
 
 # Varför namespace överhuvudtaget?
 
-I lab-klustret kör alla studenter mot samma fysiska maskiner. Namespaces ger logisk separation — Saids `foreverhome-api` krockar inte med en annan students `foreverhome-api` för de ligger i olika namespaces. Resource quotas, network policies och RBAC häftas på namespace-nivån. Utan namespaces hade hela kursen varit en enda rörig hög.
+I lab-klustret kör alla studenter mot samma fysiska maskiner. Namespaces ger logisk separation — Saids `felis-api` krockar inte med en annan students `felis-api` för de ligger i olika namespaces. Resource quotas, network policies och RBAC häftas på namespace-nivån. Utan namespaces hade hela kursen varit en enda rörig hög.
 
 # Tentapunkter
 

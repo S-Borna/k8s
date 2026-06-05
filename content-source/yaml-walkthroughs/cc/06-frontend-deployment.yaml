@@ -3,18 +3,18 @@ kind: Deployment
 metadata:
   name: frontend
   labels:
-    app: foreverhome
+    app: felis
     component: frontend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: foreverhome
+      app: felis
       component: frontend
   template:
     metadata:
       labels:
-        app: foreverhome
+        app: felis
         component: frontend
     spec:
       imagePullSecrets:

@@ -12,11 +12,11 @@ Frontend-podden behöver en stabil adress inne i klustret — annars hittar Ingr
 
 # Service-grunderna
 
-kind: Service och apiVersion v1 (rad 1-2) — core-API, ingen extension behövs. Namnet 'frontend' (rad 4) är det Ingress refererar till i sin backend-block, så stavfel här = 503 i webbläsaren. Labels app: foreverhome och component: frontend (rad 5-7) är bara metadata på Servicen själv — de matchar ingenting. Det är selectorn lite längre ner som gör det riktiga jobbet.
+kind: Service och apiVersion v1 (rad 1-2) — core-API, ingen extension behövs. Namnet 'frontend' (rad 4) är det Ingress refererar till i sin backend-block, så stavfel här = 503 i webbläsaren. Labels app: felis och component: frontend (rad 5-7) är bara metadata på Servicen själv — de matchar ingenting. Det är selectorn lite längre ner som gör det riktiga jobbet.
 
 # Selectorn — hur Service hittar pods
 
-selector på rad 9-11 är limmet mellan Service och Pod. Den tittar efter pods som har BÅDE app: foreverhome OCH component: frontend i sina egna labels. Alla pods som matchar plockas in i Servicens endpoint-lista automatiskt. Skalar du frontend-deployment till 3 repliker — alla tre hamnar bakom samma Service, och kube-proxy load-balancar mellan dem. Fallgrop: stavar du fel på en label i deploymenten matchar selectorn ingenting, Servicen blir tom, och du får Connection refused utan tydligt felmeddelande.
+selector på rad 9-11 är limmet mellan Service och Pod. Den tittar efter pods som har BÅDE app: felis OCH component: frontend i sina egna labels. Alla pods som matchar plockas in i Servicens endpoint-lista automatiskt. Skalar du frontend-deployment till 3 repliker — alla tre hamnar bakom samma Service, och kube-proxy load-balancar mellan dem. Fallgrop: stavar du fel på en label i deploymenten matchar selectorn ingenting, Servicen blir tom, och du får Connection refused utan tydligt felmeddelande.
 
 # Port-mappningen
 
