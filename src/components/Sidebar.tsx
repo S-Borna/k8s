@@ -4,6 +4,7 @@ import { navItems } from "@/lib/nav";
 import { spring } from "@/lib/motion";
 import { getEffectiveExamDate } from "@/hooks/useAppState";
 import { useAppState } from "@/hooks/useAppState";
+import { OnlineIndicator } from "@/components/OnlineIndicator";
 
 export function Sidebar() {
   return (
@@ -17,7 +18,8 @@ export function Sidebar() {
           ))}
         </nav>
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto space-y-3 pt-6">
+          <OnlineIndicator />
           <ExamCountdown />
         </div>
       </div>
