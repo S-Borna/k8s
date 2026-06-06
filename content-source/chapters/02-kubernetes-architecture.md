@@ -70,7 +70,7 @@ Han nämnde också att **scheduler är extremt smart men inte magisk**. Den kan 
 
 > 💡 Tentarelevant: Du måste kunna förklara reconciliation loop med egna ord. Det är **det** koncept som skiljer K8s från äldre orchestrators. Tentafråga kan vara "Vad händer steg för steg när en Pod dör i en Deployment?" — svaret involverar reconciliation.
 
-> 💡 Tentarelevant: Skillnaden mellan deklarativt och imperativt kommer på tentan. Förstå **varför** deklarativt är bättre — det möjliggör GitOps, audit, och rollback.
+> 💡 Tentarelevant: Skillnaden mellan deklarativt och imperativt kommer på tentan. Förstå **varför** deklarativt är bättre — det är det som ger dig GitOps, audit, och rollback.
 
 # Lektion
 

@@ -21,7 +21,7 @@ Tänk på en Pod som en **logisk maskin** där containers är processer.
 
 ## Varför Pods och inte bara containers?
 
-Multi-container Pods möjliggör mönster som inte funkar med ensamma containers:
+Multi-container Pods öppnar för mönster som inte funkar med ensamma containers:
 
 **Sidecar** — hjälpcontainer bredvid huvudcontainer. T.ex. logshipper som läser loggar från huvudappen och skickar till central plats.
 
@@ -344,7 +344,7 @@ kubectl delete pod multi
 
 ## Q [workloads, pods]: Vad delar containers i samma Pod?
 
-**A:** Nätverks-namespace (samma IP, samma localhost, samma portar), storage volumes (kan dela filer), och lifecycle (startas och stoppas tillsammans). Detta är **anledningen** till att de räknas som en Pod - de är så tätt kopplade att de fungerar som en logisk enhet.
+**A:** Nätverks-namespace (samma IP, samma localhost, samma portar), storage volumes (kan dela filer), och lifecycle (startas och stoppas tillsammans). Därför räknas de som en Pod — de är så tätt kopplade att de fungerar som en logisk enhet.
 
 ## Q [workloads, pods]: Varför är Pods immutabla?
 
