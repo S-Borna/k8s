@@ -82,7 +82,7 @@ Standalone Pods används bara för debugging eller engångsjobb.
 
 # Giacomos tillägg
 
-Giacomo betonade att **Pods är immutabla**. Det är inte en designdetalj — det är **anledningen** till att K8s fungerar. Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Det är grunden för rolling updates, rollbacks och self-healing.
+Giacomo betonade att **Pods är immutabla**. Det är inte en designdetalj — det är **grunden** för att K8s fungerar. Eftersom Pods inte kan ändras kan systemet alltid återskapa dem från YAML. Det är därför rolling updates, rollbacks och self-healing över huvud taget går att bygga.
 
 > 💡 Tentarelevant: Containers i samma Pod delar `localhost`. Skriv detta som test på tentan om frågan rör multi-container.
 
