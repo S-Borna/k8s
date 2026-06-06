@@ -550,9 +550,9 @@ data:
   password: password
 ```
 
-**Svar:** Vardena under `data:` maste vara base64-kodade. Skriv `echo -n 'user' | base64` → `dXNlcg==` och `echo -n 'password' | base64` → `cGFzc3dvcmQ=`. Alternativt anvand falten under `stringData:` dar K8s base64-kodar at dig.
+**Svar:** Värdena under `data:` måste vara base64-kodade. Skriv `echo -n 'user' | base64` → `dXNlcg==` och `echo -n 'password' | base64` → `cGFzc3dvcmQ=`. Alternativt använd fälten under `stringData:` där K8s base64-kodar åt dig.
 
-**Förklaring:** Falten under `data:` kraver base64. Apply gar igenom men appen far skrap-varden nar de avkodas. `stringData:` ar bekvamare nar du skriver manifest for hand.
+**Förklaring:** Fälten under `data:` kräver base64. Apply går igenom men appen får skräp-värden när de avkodas. `stringData:` är bekvämare när du skriver manifest för hand.
 
 ## 3. Fyll i: Mounta ConfigMap som filer
 
