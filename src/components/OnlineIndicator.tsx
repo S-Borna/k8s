@@ -6,7 +6,7 @@ export function OnlineIndicator() {
 
   if (count === null) return null;
 
-  const label = count === 1 ? "läser nu" : "läser nu";
+  const label = "losers online";
 
   return (
     <motion.div
