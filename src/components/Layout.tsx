@@ -7,7 +7,6 @@ import { PageTransition } from "@/components/PageTransition";
 import { Toaster } from "@/components/Toaster";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ShareLinkLoader } from "@/components/ShareLinkLoader";
-import { MusicPlayer } from "@/components/MusicPlayer";
 import { ToastProvider, useToastsState } from "@/hooks/useToasts";
 
 export function Layout() {
@@ -33,7 +32,6 @@ export function Layout() {
         </main>
 
         <BottomNav />
-        <MusicPlayer />
         <Toaster />
       </div>
     </ToastProvider>
