@@ -22,4 +22,5 @@ export const playlist: Track[] = [
   { id: "09", src: "/audio/09.mp3", title: "Free Bird", artist: "Lynyrd Skynyrd" },
   { id: "10", src: "/audio/10.mp3", title: "The Beautiful People", artist: "Marilyn Manson" },
   { id: "11", src: "/audio/11.mp3", title: "Smells Like Teen Spirit", artist: "Nirvana" },
+  { id: "12", src: "/audio/12.mp3", title: "Värdelös", artist: "Björn Rosenström" },
 ];
