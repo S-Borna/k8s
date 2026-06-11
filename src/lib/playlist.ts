@@ -19,4 +19,5 @@ export const playlist: Track[] = [
   },
   { id: "07", src: "/audio/07.mp3", title: "REGRET", artist: "Mckay" },
   { id: "08", src: "/audio/08.mp3", title: "Sip (Alcohol)", artist: "Joeboy" },
+  { id: "09", src: "/audio/09.mp3", title: "Free Bird", artist: "Lynyrd Skynyrd" },
 ];
